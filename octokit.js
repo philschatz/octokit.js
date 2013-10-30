@@ -5,7 +5,25 @@
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   makeOctokit = function(_, jQuery, base64encode, userAgent) {
-    var Octokit;
+    var Octokit, cbWrap;
+    cbWrap = function(func) {
+      return function() {
+        var last, promise;
+        last = _.last(arguments);
+        if (_.isFunction(last)) {
+          promise = func.apply(this, _.initial(arguments));
+          promise.done(function(val) {
+            return last(null, val);
+          });
+          promise.fail(function(err) {
+            return last(err || true);
+          });
+          return promise;
+        } else {
+          return func.apply(this, arguments);
+        }
+      };
+    };
     Octokit = (function() {
       function Octokit(clientOptions) {
         var AuthenticatedUser, Branch, ETagResponse, Gist, GitRepo, Organization, Repository, Team, User, clearCache, notifyEnd, notifyStart, toQueryString, _cachedETags, _client, _listeners, _request;
@@ -183,12 +201,12 @@
         this.onRateLimitChanged = function(listener) {
           return _listeners.push(listener);
         };
-        this.getZen = function() {
+        this.getZen = cbWrap(function() {
           return _request('GET', '/zen', null, {
             raw: true
           });
-        };
-        this.getAllUsers = function(since) {
+        });
+        this.getAllUsers = cbWrap(function(since) {
           var options;
           if (since == null) {
             since = null;
@@ -198,14 +216,14 @@
             options.since = since;
           }
           return _request('GET', '/users', options);
-        };
-        this.getOrgRepos = function(orgName, type) {
+        });
+        this.getOrgRepos = cbWrap(function(orgName, type) {
           if (type == null) {
             type = 'all';
           }
           return _request('GET', "/orgs/" + orgName + "/repos?type=" + type + "&per_page=1000&sort=updated&direction=desc", null);
-        };
-        this.getPublicGists = function(since) {
+        });
+        this.getPublicGists = cbWrap(function(since) {
           var getDate, options;
           if (since == null) {
             since = null;
@@ -223,11 +241,11 @@
             };
           }
           return _request('GET', '/gists/public', options);
-        };
-        this.getPublicEvents = function() {
+        });
+        this.getPublicEvents = cbWrap(function() {
           return _request('GET', '/events', null);
-        };
-        this.getNotifications = function(options) {
+        });
+        this.getNotifications = cbWrap(function(options) {
           var getDate, queryString;
           if (options == null) {
             options = {};
@@ -243,7 +261,7 @@
           }
           queryString = toQueryString(options);
           return _request('GET', "/notifications" + queryString, null);
-        };
+        });
         User = (function() {
           function User(_username) {
             var _cachedInfo, _rootPath;
@@ -256,7 +274,7 @@
               _rootPath = "/user";
             }
             _cachedInfo = null;
-            this.getInfo = function(force) {
+            this.getInfo = cbWrap(function(force) {
               var promise;
               if (force == null) {
                 force = false;
@@ -272,31 +290,31 @@
               return _request('GET', "" + _rootPath, null).done(function(info) {
                 return _cachedInfo = info;
               });
-            };
-            this.getRepos = function() {
+            });
+            this.getRepos = cbWrap(function() {
               return _request('GET', "" + _rootPath + "/repos?type=all&per_page=1000&sort=updated", null);
-            };
-            this.getOrgs = function() {
+            });
+            this.getOrgs = cbWrap(function() {
               return _request('GET', "" + _rootPath + "/orgs", null);
-            };
-            this.getGists = function() {
+            });
+            this.getGists = cbWrap(function() {
               return _request('GET', "" + _rootPath + "/gists", null);
-            };
-            this.getFollowers = function() {
+            });
+            this.getFollowers = cbWrap(function() {
               return _request('GET', "" + _rootPath + "/followers", null);
-            };
-            this.getFollowing = function() {
+            });
+            this.getFollowing = cbWrap(function() {
               return _request('GET', "" + _rootPath + "/following", null);
-            };
-            this.isFollowing = function(user) {
+            });
+            this.isFollowing = cbWrap(function(user) {
               return _request('GET', "" + _rootPath + "/following/" + user, null, {
                 isBoolean: true
               });
-            };
-            this.getPublicKeys = function() {
+            });
+            this.getPublicKeys = cbWrap(function() {
               return _request('GET', "" + _rootPath + "/keys", null);
-            };
-            this.getReceivedEvents = function(onlyPublic) {
+            });
+            this.getReceivedEvents = cbWrap(function(onlyPublic) {
               var isPublic;
               if (!_username) {
                 throw new Error('BUG: This does not work for authenticated users yet!');
@@ -306,8 +324,8 @@
                 isPublic = '/public';
               }
               return _request('GET', "/users/" + _username + "/received_events" + isPublic, null);
-            };
-            this.getEvents = function(onlyPublic) {
+            });
+            this.getEvents = cbWrap(function(onlyPublic) {
               var isPublic;
               if (!_username) {
                 throw new Error('BUG: This does not work for authenticated users yet!');
@@ -317,7 +335,7 @@
                 isPublic = '/public';
               }
               return _request('GET', "/users/" + _username + "/events" + isPublic, null);
-            };
+            });
           }
 
           return User;
@@ -328,52 +346,52 @@
 
           function AuthenticatedUser() {
             AuthenticatedUser.__super__.constructor.call(this);
-            this.updateInfo = function(options) {
+            this.updateInfo = cbWrap(function(options) {
               return _request('PATCH', '/user', options);
-            };
-            this.getGists = function() {
+            });
+            this.getGists = cbWrap(function() {
               return _request('GET', '/gists', null);
-            };
-            this.follow = function(username) {
+            });
+            this.follow = cbWrap(function(username) {
               return _request('PUT', "/user/following/" + username, null);
-            };
-            this.unfollow = function(username) {
+            });
+            this.unfollow = cbWrap(function(username) {
               return _request('DELETE', "/user/following/" + username, null);
-            };
-            this.getEmails = function() {
+            });
+            this.getEmails = cbWrap(function() {
               return _request('GET', '/user/emails', null);
-            };
-            this.addEmail = function(emails) {
+            });
+            this.addEmail = cbWrap(function(emails) {
               if (!_.isArray(emails)) {
                 emails = [emails];
               }
               return _request('POST', '/user/emails', emails);
-            };
-            this.addEmail = function(emails) {
+            });
+            this.addEmail = cbWrap(function(emails) {
               if (!_.isArray(emails)) {
                 emails = [emails];
               }
               return _request('DELETE', '/user/emails', emails);
-            };
-            this.getPublicKey = function(id) {
+            });
+            this.getPublicKey = cbWrap(function(id) {
               return _request('GET', "/user/keys/" + id, null);
-            };
-            this.addPublicKey = function(title, key) {
+            });
+            this.addPublicKey = cbWrap(function(title, key) {
               return _request('POST', "/user/keys", {
                 title: title,
                 key: key
               });
-            };
-            this.updatePublicKey = function(id, options) {
+            });
+            this.updatePublicKey = cbWrap(function(id, options) {
               return _request('PATCH', "/user/keys/" + id, options);
-            };
-            this.createRepo = function(name, options) {
+            });
+            this.createRepo = cbWrap(function(name, options) {
               if (options == null) {
                 options = {};
               }
               options.name = name;
               return _request('POST', "/user/repos", options);
-            };
+            });
           }
 
           return AuthenticatedUser;
@@ -382,38 +400,38 @@
         Team = (function() {
           function Team(id) {
             this.id = id;
-            this.getInfo = function() {
+            this.getInfo = cbWrap(function() {
               return _request('GET', "/teams/" + this.id, null);
-            };
-            this.updateTeam = function(options) {
+            });
+            this.updateTeam = cbWrap(function(options) {
               return _request('PATCH', "/teams/" + this.id, options);
-            };
-            this.remove = function() {
+            });
+            this.remove = cbWrap(function() {
               return _request('DELETE', "/teams/" + this.id);
-            };
-            this.getMembers = function() {
+            });
+            this.getMembers = cbWrap(function() {
               return _request('GET', "/teams/" + this.id + "/members");
-            };
-            this.isMember = function(user) {
+            });
+            this.isMember = cbWrap(function(user) {
               return _request('GET', "/teams/" + this.id + "/members/" + user, null, {
                 isBoolean: true
               });
-            };
-            this.addMember = function(user) {
+            });
+            this.addMember = cbWrap(function(user) {
               return _request('PUT', "/teams/" + this.id + "/members/" + user);
-            };
-            this.removeMember = function(user) {
+            });
+            this.removeMember = cbWrap(function(user) {
               return _request('DELETE', "/teams/" + this.id + "/members/" + user);
-            };
-            this.getRepos = function() {
+            });
+            this.getRepos = cbWrap(function() {
               return _request('GET', "/teams/" + this.id + "/repos");
-            };
-            this.addRepo = function(orgName, repoName) {
+            });
+            this.addRepo = cbWrap(function(orgName, repoName) {
               return _request('PUT', "/teams/" + this.id + "/repos/" + orgName + "/" + repoName);
-            };
-            this.removeRepo = function(orgName, repoName) {
+            });
+            this.removeRepo = cbWrap(function(orgName, repoName) {
               return _request('DELETE', "/teams/" + this.id + "/repos/" + orgName + "/" + repoName);
-            };
+            });
           }
 
           return Team;
@@ -422,16 +440,16 @@
         Organization = (function() {
           function Organization(name) {
             this.name = name;
-            this.getInfo = function() {
+            this.getInfo = cbWrap(function() {
               return _request('GET', "/orgs/" + this.name, null);
-            };
-            this.updateInfo = function(options) {
+            });
+            this.updateInfo = cbWrap(function(options) {
               return _request('PATCH', "/orgs/" + this.name, options);
-            };
-            this.getTeams = function() {
+            });
+            this.getTeams = cbWrap(function() {
               return _request('GET', "/orgs/" + this.name + "/teams", null);
-            };
-            this.createTeam = function(name, repoNames, permission) {
+            });
+            this.createTeam = cbWrap(function(name, repoNames, permission) {
               var options;
               if (repoNames == null) {
                 repoNames = null;
@@ -447,25 +465,25 @@
                 options.repo_names = repoNames;
               }
               return _request('POST', "/orgs/" + this.name + "/teams", options);
-            };
-            this.getMembers = function() {
+            });
+            this.getMembers = cbWrap(function() {
               return _request('GET', "/orgs/" + this.name + "/members", null);
-            };
-            this.isMember = function(user) {
+            });
+            this.isMember = cbWrap(function(user) {
               return _request('GET', "/orgs/" + this.name + "/members/" + user, null, {
                 isBoolean: true
               });
-            };
-            this.removeMember = function(user) {
+            });
+            this.removeMember = cbWrap(function(user) {
               return _request('DELETE', "/orgs/" + this.name + "/members/" + user, null);
-            };
-            this.createRepo = function(name, options) {
+            });
+            this.createRepo = cbWrap(function(name, options) {
               if (options == null) {
                 options = {};
               }
               options.name = name;
               return _request('POST', "/orgs/" + this.name + "/repos", options);
-            };
+            });
           }
 
           return Organization;
@@ -477,39 +495,39 @@
             this.repoUser = repoUser;
             this.repoName = repoName;
             _repoPath = "/repos/" + this.repoUser + "/" + this.repoName;
-            this.deleteRepo = function() {
+            this.deleteRepo = cbWrap(function() {
               return _request('DELETE', "" + _repoPath);
-            };
+            });
             this._updateTree = function(branch) {
               return this.getRef("heads/" + branch).promise();
             };
-            this.getRef = function(ref) {
+            this.getRef = cbWrap(function(ref) {
               var _this = this;
               return _request('GET', "" + _repoPath + "/git/refs/" + ref, null).then(function(res) {
                 return res.object.sha;
               }).promise();
-            };
-            this.createRef = function(options) {
+            });
+            this.createRef = cbWrap(function(options) {
               return _request('POST', "" + _repoPath + "/git/refs", options);
-            };
-            this.deleteRef = function(ref) {
+            });
+            this.deleteRef = cbWrap(function(ref) {
               return _request('DELETE', "" + _repoPath + "/git/refs/" + ref, this.options);
-            };
-            this.getBranches = function() {
+            });
+            this.getBranches = cbWrap(function() {
               var _this = this;
               return _request('GET', "" + _repoPath + "/git/refs/heads", null).then(function(heads) {
                 return _.map(heads, function(head) {
                   return _.last(head.ref.split("/"));
                 });
               }).promise();
-            };
-            this.getBlob = function(sha, isBase64) {
+            });
+            this.getBlob = cbWrap(function(sha, isBase64) {
               return _request('GET', "" + _repoPath + "/git/blobs/" + sha, null, {
                 raw: true,
                 isBase64: isBase64
               });
-            };
-            this.getSha = function(branch, path) {
+            });
+            this.getSha = cbWrap(function(branch, path) {
               var _this = this;
               if (path === '') {
                 return this.getRef("heads/" + branch);
@@ -528,8 +546,8 @@
                   message: 'SHA_NOT_FOUND'
                 });
               }).promise();
-            };
-            this.getContents = function(path, sha) {
+            });
+            this.getContents = cbWrap(function(path, sha) {
               var queryString,
                 _this = this;
               if (sha == null) {
@@ -546,8 +564,8 @@
               }).then(function(contents) {
                 return contents;
               }).promise();
-            };
-            this.getTree = function(tree, options) {
+            });
+            this.getTree = cbWrap(function(tree, options) {
               var queryString,
                 _this = this;
               if (options == null) {
@@ -557,8 +575,8 @@
               return _request('GET', "" + _repoPath + "/git/trees/" + tree + queryString, null).then(function(res) {
                 return res.tree;
               }).promise();
-            };
-            this.postBlob = function(content, isBase64) {
+            });
+            this.postBlob = cbWrap(function(content, isBase64) {
               var _this = this;
               if (typeof content === 'string') {
                 if (isBase64) {
@@ -575,8 +593,8 @@
               return _request('POST', "" + _repoPath + "/git/blobs", content).then(function(res) {
                 return res.sha;
               }).promise();
-            };
-            this.updateTreeMany = function(baseTree, newTree) {
+            });
+            this.updateTreeMany = cbWrap(function(baseTree, newTree) {
               var data,
                 _this = this;
               data = {
@@ -586,16 +604,16 @@
               return _request('POST', "" + _repoPath + "/git/trees", data).then(function(res) {
                 return res.sha;
               }).promise();
-            };
-            this.postTree = function(tree) {
+            });
+            this.postTree = cbWrap(function(tree) {
               var _this = this;
               return _request('POST', "" + _repoPath + "/git/trees", {
                 tree: tree
               }).then(function(res) {
                 return res.sha;
               }).promise();
-            };
-            this.commit = function(parents, tree, message) {
+            });
+            this.commit = cbWrap(function(parents, tree, message) {
               var data;
               if (!_.isArray(parents)) {
                 parents = [parents];
@@ -608,16 +626,16 @@
               return _request('POST', "" + _repoPath + "/git/commits", data).then(function(commit) {
                 return commit.sha;
               }).promise();
-            };
-            this.updateHead = function(head, commit) {
+            });
+            this.updateHead = cbWrap(function(head, commit) {
               return _request('PATCH', "" + _repoPath + "/git/refs/heads/" + head, {
                 sha: commit
               });
-            };
-            this.getCommit = function(sha) {
+            });
+            this.getCommit = cbWrap(function(sha) {
               return _request('GET', "" + _repoPath + "/commits/" + sha, null);
-            };
-            this.getCommits = function(options) {
+            });
+            this.getCommits = cbWrap(function(options) {
               var getDate, queryString;
               if (options == null) {
                 options = {};
@@ -637,7 +655,7 @@
               }
               queryString = toQueryString(options);
               return _request('GET', "" + _repoPath + "/commits" + queryString, null).promise();
-            };
+            });
           }
 
           return GitRepo;
@@ -650,10 +668,10 @@
             _getRef = getRef || function() {
               throw new Error('BUG: No way to fetch branch ref!');
             };
-            this.getCommit = function(sha) {
+            this.getCommit = cbWrap(function(sha) {
               return _git.getCommit(sha);
-            };
-            this.getCommits = function(options) {
+            });
+            this.getCommits = cbWrap(function(options) {
               if (options == null) {
                 options = {};
               }
@@ -662,8 +680,8 @@
                 options.sha = branch;
                 return _git.getCommits(options);
               }).promise();
-            };
-            this.createBranch = function(newBranchName) {
+            });
+            this.createBranch = cbWrap(function(newBranchName) {
               var _this = this;
               return _getRef().then(function(branch) {
                 return _git.getSha(branch, '').then(function(sha) {
@@ -673,8 +691,8 @@
                   });
                 });
               }).promise();
-            };
-            this.read = function(path, isBase64) {
+            });
+            this.read = cbWrap(function(path, isBase64) {
               var _this = this;
               return _getRef().then(function(branch) {
                 return _git.getSha(branch, path).then(function(sha) {
@@ -686,8 +704,8 @@
                   });
                 });
               }).promise();
-            };
-            this.contents = function(path) {
+            });
+            this.contents = cbWrap(function(path) {
               var _this = this;
               return _getRef().then(function(branch) {
                 return _git.getSha(branch, '').then(function(sha) {
@@ -696,8 +714,8 @@
                   });
                 });
               }).promise();
-            };
-            this.remove = function(path, message) {
+            });
+            this.remove = cbWrap(function(path, message) {
               var _this = this;
               if (message == null) {
                 message = "Removed " + path;
@@ -726,8 +744,8 @@
                   });
                 });
               }).promise();
-            };
-            this.move = function(path, newPath, message) {
+            });
+            this.move = cbWrap(function(path, newPath, message) {
               var _this = this;
               if (message == null) {
                 message = "Moved " + path;
@@ -755,8 +773,8 @@
                   });
                 });
               }).promise();
-            };
-            this.write = function(path, content, message, isBase64, parentCommitSha) {
+            });
+            this.write = cbWrap(function(path, content, message, isBase64, parentCommitSha) {
               var contents;
               if (message == null) {
                 message = "Changed " + path;
@@ -770,8 +788,8 @@
                 isBase64: isBase64
               };
               return this.writeMany(contents, message, parentCommitSha).promise();
-            };
-            this.writeMany = function(contents, message, parentCommitShas) {
+            });
+            this.writeMany = cbWrap(function(contents, message, parentCommitShas) {
               var _this = this;
               if (message == null) {
                 message = "Changed Multiple";
@@ -798,7 +816,7 @@
                       };
                     });
                   });
-                  return jQuery.when.apply(jQuery, promises).then(function(newTree1, newTree2, newTreeN) {
+                  return $.when.apply($, promises).then(function(newTree1, newTree2, newTreeN) {
                     var newTrees;
                     newTrees = _.toArray(arguments);
                     return _git.updateTreeMany(parentCommitShas, newTrees).then(function(tree) {
@@ -816,7 +834,7 @@
                   return _git._updateTree(branch).then(afterParentCommitShas);
                 }
               }).promise();
-            };
+            });
           }
 
           return Branch;
@@ -830,10 +848,6 @@
             _repo = this.options.name;
             this.git = new GitRepo(_user, _repo);
             this.repoPath = "/repos/" + _user + "/" + _repo;
-            this.currentTree = {
-              branch: null,
-              sha: null
-            };
             this.getBranches = function() {
               return this.git.getBranches();
             };
@@ -858,33 +872,33 @@
               };
               return new Branch(this.git, getRef);
             };
-            this.getInfo = function() {
+            this.getInfo = cbWrap(function() {
               return _request('GET', this.repoPath, null);
-            };
-            this.getContents = function(branch, path) {
+            });
+            this.getContents = cbWrap(function(branch, path) {
               return _request('GET', "" + this.repoPath + "/contents?ref=" + branch, {
                 path: path
               });
-            };
-            this.fork = function() {
+            });
+            this.fork = cbWrap(function() {
               return _request('POST', "" + this.repoPath + "/forks", null);
-            };
-            this.createPullRequest = function(options) {
+            });
+            this.createPullRequest = cbWrap(function(options) {
               return _request('POST', "" + this.repoPath + "/pulls", options);
-            };
-            this.getCommits = function(options) {
+            });
+            this.getCommits = cbWrap(function(options) {
               return this.git.getCommits(options);
-            };
-            this.getEvents = function() {
+            });
+            this.getEvents = cbWrap(function() {
               return _request('GET', "" + this.repoPath + "/events", null);
-            };
-            this.getIssueEvents = function() {
+            });
+            this.getIssueEvents = cbWrap(function() {
               return _request('GET', "" + this.repoPath + "/issues/events", null);
-            };
-            this.getNetworkEvents = function() {
+            });
+            this.getNetworkEvents = cbWrap(function() {
               return _request('GET', "/networks/" + _owner + "/" + _repo + "/events", null);
-            };
-            this.getNotifications = function(options) {
+            });
+            this.getNotifications = cbWrap(function(options) {
               var getDate, queryString;
               if (options == null) {
                 options = {};
@@ -900,11 +914,11 @@
               }
               queryString = toQueryString(options);
               return _request('GET', "" + this.repoPath + "/notifications" + queryString, null);
-            };
-            this.getCollaborators = function() {
+            });
+            this.getCollaborators = cbWrap(function() {
               return _request('GET', "" + this.repoPath + "/collaborators", null);
-            };
-            this.isCollaborator = function(username) {
+            });
+            this.isCollaborator = cbWrap(function(username) {
               if (username == null) {
                 username = null;
               }
@@ -914,11 +928,11 @@
               return _request('GET', "" + this.repoPath + "/collaborators/" + username, null, {
                 isBoolean: true
               });
-            };
-            this.canCollaborate = function() {
+            });
+            this.canCollaborate = cbWrap(function() {
               var _this = this;
               if (!(clientOptions.password || clientOptions.token)) {
-                return (new jQuery.Deferred()).resolve(false);
+                return (new $.Deferred()).resolve(false);
               }
               return _client.getLogin().then(function(login) {
                 if (!login) {
@@ -929,14 +943,14 @@
               }).then(null, function(err) {
                 return false;
               });
-            };
-            this.getHooks = function() {
+            });
+            this.getHooks = cbWrap(function() {
               return _request('GET', "" + this.repoPath + "/hooks", null);
-            };
-            this.getHook = function(id) {
+            });
+            this.getHook = cbWrap(function(id) {
               return _request('GET', "" + this.repoPath + "/hooks/" + id, null);
-            };
-            this.createHook = function(name, config, events, active) {
+            });
+            this.createHook = cbWrap(function(name, config, events, active) {
               var data;
               if (events == null) {
                 events = ['push'];
@@ -951,8 +965,8 @@
                 active: active
               };
               return _request('POST', "" + this.repoPath + "/hooks", data);
-            };
-            this.editHook = function(id, config, events, addEvents, removeEvents, active) {
+            });
+            this.editHook = cbWrap(function(id, config, events, addEvents, removeEvents, active) {
               var data;
               if (config == null) {
                 config = null;
@@ -986,16 +1000,16 @@
                 data.active = active;
               }
               return _request('PATCH', "" + this.repoPath + "/hooks/" + id, data);
-            };
-            this.testHook = function(id) {
+            });
+            this.testHook = cbWrap(function(id) {
               return _request('POST', "" + this.repoPath + "/hooks/" + id + "/tests", null);
-            };
-            this.deleteHook = function(id) {
+            });
+            this.deleteHook = cbWrap(function(id) {
               return _request('DELETE', "" + this.repoPath + "/hooks/" + id, null);
-            };
-            this.getLanguages = function() {
+            });
+            this.getLanguages = cbWrap(function() {
               return _request('GET', "" + this.repoPath + "/languages", null);
-            };
+            });
           }
 
           return Repository;
@@ -1007,10 +1021,10 @@
             this.options = options;
             id = this.options.id;
             _gistPath = "/gists/" + id;
-            this.read = function() {
+            this.read = cbWrap(function() {
               return _request('GET', _gistPath, null);
-            };
-            this.create = function(files, isPublic, description) {
+            });
+            this.create = cbWrap(function(files, isPublic, description) {
               if (isPublic == null) {
                 isPublic = false;
               }
@@ -1025,14 +1039,14 @@
                 options.description = description;
               }
               return _request('POST', "/gists", options);
-            };
-            this["delete"] = function() {
+            });
+            this["delete"] = cbWrap(function() {
               return _request('DELETE', _gistPath, null);
-            };
-            this.fork = function() {
+            });
+            this.fork = cbWrap(function() {
               return _request('POST', "" + _gistPath + "/forks", null);
-            };
-            this.update = function(files, description) {
+            });
+            this.update = cbWrap(function(files, description) {
               if (description == null) {
                 description = null;
               }
@@ -1043,18 +1057,18 @@
                 options.description = description;
               }
               return _request('PATCH', _gistPath, options);
-            };
-            this.star = function() {
+            });
+            this.star = cbWrap(function() {
               return _request('PUT', "" + _gistPath + "/star");
-            };
-            this.unstar = function() {
+            });
+            this.unstar = cbWrap(function() {
               return _request('DELETE', "" + _gistPath + "/star");
-            };
-            this.isStarred = function() {
+            });
+            this.isStarred = cbWrap(function() {
               return _request('GET', "" + _gistPath, null, {
                 isBoolean: true
               });
-            };
+            });
           }
 
           return Gist;
@@ -1089,7 +1103,7 @@
             id: id
           });
         };
-        this.getLogin = function() {
+        this.getLogin = cbWrap(function() {
           var ret;
           if (clientOptions.password || clientOptions.token) {
             return new User().getInfo().then(function(info) {
@@ -1100,7 +1114,7 @@
             ret.resolve(null);
             return ret;
           }
-        };
+        });
       }
 
       return Octokit;

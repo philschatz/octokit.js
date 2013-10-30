@@ -20,6 +20,23 @@
 # Depending on how this is loaded (nodejs, requirejs, globals)
 # the actual underscore, jQuery.ajax/Deferred, and base64 encode functions may differ.
 makeOctokit = (_, jQuery, base64encode, userAgent) =>
+
+
+  # Modify methods that return a Promise to accept an optional callback
+  # as the last argument to the function
+  cbWrap = (func) ->
+    return () ->
+      # Split off the last argument if it is a function
+      last = _.last(arguments)
+      if _.isFunction(last)
+        promise = func.apply(@, _.initial arguments)
+        promise.done (val) -> last(null, val)
+        promise.fail (err) -> last(err or true) # in case the error returned is null
+        return promise
+      else
+        return func.apply(@, arguments)
+
+
   class Octokit
 
     constructor: (clientOptions={}) ->
@@ -202,25 +219,25 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
 
       # Random zen quote (test the API)
       # -------
-      @getZen = () ->
+      @getZen = cbWrap () ->
         # Send `data` to `null` and the `raw` flag to `true`
         _request 'GET', '/zen', null, {raw:true}
 
       # Get all users
       # -------
-      @getAllUsers = (since=null) ->
+      @getAllUsers = cbWrap (since=null) ->
         options = {}
         options.since = since if since
         _request 'GET', '/users', options
 
       # List public repositories for an Organization
       # -------
-      @getOrgRepos = (orgName, type='all') ->
+      @getOrgRepos = cbWrap (orgName, type='all') ->
         _request 'GET', "/orgs/#{orgName}/repos?type=#{type}&per_page=1000&sort=updated&direction=desc", null
 
       # Get public Gists on all of GitHub
       # -------
-      @getPublicGists = (since=null) ->
+      @getPublicGists = cbWrap (since=null) ->
         options = null
         # Converts a Date object to a string
         getDate = (time) ->
@@ -232,7 +249,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
 
       # List Public Events on all of GitHub
       # -------
-      @getPublicEvents = () ->
+      @getPublicEvents = cbWrap () ->
         _request 'GET', '/events', null
 
 
@@ -243,7 +260,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
       # - `all`: `true` to show notifications marked as read.
       # - `participating`: `true` to show only notifications in which the user is directly participating or mentioned.
       # - `since`: Optional time.
-      @getNotifications = (options={}) ->
+      @getNotifications = cbWrap (options={}) ->
         # Converts a Date object to a string
         getDate = (time) ->
           return time.toISOString() if Date == time.constructor
@@ -272,7 +289,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # Retrieve user information
           # -------
           _cachedInfo = null
-          @getInfo = (force=false) ->
+          @getInfo = cbWrap (force=false) ->
             _cachedInfo = null if force
 
             if _cachedInfo
@@ -286,43 +303,43 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
 
           # List user repositories
           # -------
-          @getRepos = () ->
+          @getRepos = cbWrap () ->
             _request 'GET', "#{_rootPath}/repos?type=all&per_page=1000&sort=updated", null
 
           # List user organizations
           # -------
-          @getOrgs = () ->
+          @getOrgs = cbWrap () ->
             _request 'GET', "#{_rootPath}/orgs", null
 
           # List a user's gists
           # -------
-          @getGists = () ->
+          @getGists = cbWrap () ->
             _request 'GET', "#{_rootPath}/gists", null
 
           # List followers of a user
           # -------
-          @getFollowers = () ->
+          @getFollowers = cbWrap () ->
             _request 'GET', "#{_rootPath}/followers", null
 
           # List who this user is following
           # -------
-          @getFollowing = () ->
+          @getFollowing = cbWrap () ->
             _request 'GET', "#{_rootPath}/following", null
 
           # Check if this user is following another user
           # -------
-          @isFollowing = (user) ->
+          @isFollowing = cbWrap (user) ->
             _request 'GET', "#{_rootPath}/following/#{user}", null, {isBoolean:true}
 
           # List public keys for a user
           # -------
-          @getPublicKeys = () ->
+          @getPublicKeys = cbWrap () ->
             _request 'GET', "#{_rootPath}/keys", null
 
 
           # Get Received events for this user
           # -------
-          @getReceivedEvents = (onlyPublic) ->
+          @getReceivedEvents = cbWrap (onlyPublic) ->
             throw new Error 'BUG: This does not work for authenticated users yet!' if not _username
             isPublic = ''
             isPublic = '/public' if onlyPublic
@@ -330,7 +347,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
 
           # Get all events for this user
           # -------
-          @getEvents = (onlyPublic) ->
+          @getEvents = cbWrap (onlyPublic) ->
             throw new Error 'BUG: This does not work for authenticated users yet!' if not _username
             isPublic = ''
             isPublic = '/public' if onlyPublic
@@ -355,54 +372,54 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # - `location`: String
           # - `hireable`: Boolean
           # - `bio`: String
-          @updateInfo = (options) ->
+          @updateInfo = cbWrap (options) ->
             _request 'PATCH', '/user', options
 
           # List authenticated user's gists
           # -------
-          @getGists = () ->
+          @getGists = cbWrap () ->
             _request 'GET', '/gists', null
 
           # Follow a user
           # -------
-          @follow = (username) ->
+          @follow = cbWrap (username) ->
             _request 'PUT', "/user/following/#{username}", null
 
           # Unfollow user
           # -------
-          @unfollow = (username) ->
+          @unfollow = cbWrap (username) ->
             _request 'DELETE', "/user/following/#{username}", null
 
           # Get Emails associated with this user
           # -------
-          @getEmails = () ->
+          @getEmails = cbWrap () ->
             _request 'GET', '/user/emails', null
 
           # Add Emails associated with this user
           # -------
-          @addEmail = (emails) ->
+          @addEmail = cbWrap (emails) ->
             emails = [emails] if !_.isArray(emails)
             _request 'POST', '/user/emails', emails
 
           # Remove Emails associated with this user
           # -------
-          @addEmail = (emails) ->
+          @addEmail = cbWrap (emails) ->
             emails = [emails] if !_.isArray(emails)
             _request 'DELETE', '/user/emails', emails
 
           # Get a single public key
           # -------
-          @getPublicKey = (id) ->
+          @getPublicKey = cbWrap (id) ->
             _request 'GET', "/user/keys/#{id}", null
 
           # Add a public key
           # -------
-          @addPublicKey = (title, key) ->
+          @addPublicKey = cbWrap (title, key) ->
             _request 'POST', "/user/keys", {title: title, key: key}
 
           # Update a public key
           # -------
-          @updatePublicKey = (id, options) ->
+          @updatePublicKey = cbWrap (id, options) ->
             _request 'PATCH', "/user/keys/#{id}", options
 
           # Create a repository
@@ -416,7 +433,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # - `has_wiki`: boolean (Default `true`)
           # - `has_downloads`: boolean (Default `true`)
           # - `auto_init`:  boolean (Default `false`)
-          @createRepo = (name, options={}) ->
+          @createRepo = cbWrap (name, options={}) ->
             options.name = name
             _request 'POST', "/user/repos", options
 
@@ -427,43 +444,43 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
 
       class Team
         constructor: (@id) ->
-          @getInfo = () ->
+          @getInfo = cbWrap () ->
             _request 'GET', "/teams/#{@id}", null
 
           # - `name`
           # - `permission`
-          @updateTeam = (options) ->
+          @updateTeam = cbWrap (options) ->
             _request 'PATCH', "/teams/#{@id}", options
 
-          @remove = () ->
+          @remove = cbWrap () ->
             _request 'DELETE', "/teams/#{@id}"
 
-          @getMembers = () ->
+          @getMembers = cbWrap () ->
             _request 'GET', "/teams/#{@id}/members"
 
-          @isMember = (user) ->
+          @isMember = cbWrap (user) ->
             _request 'GET', "/teams/#{@id}/members/#{user}", null, {isBoolean:true}
 
-          @addMember = (user) ->
+          @addMember = cbWrap (user) ->
             _request 'PUT', "/teams/#{@id}/members/#{user}"
 
-          @removeMember = (user) ->
+          @removeMember = cbWrap (user) ->
             _request 'DELETE', "/teams/#{@id}/members/#{user}"
 
-          @getRepos = () ->
+          @getRepos = cbWrap () ->
             _request 'GET', "/teams/#{@id}/repos"
 
-          @addRepo = (orgName, repoName) ->
+          @addRepo = cbWrap (orgName, repoName) ->
             _request 'PUT', "/teams/#{@id}/repos/#{orgName}/#{repoName}"
 
-          @removeRepo = (orgName, repoName) ->
+          @removeRepo = cbWrap (orgName, repoName) ->
             _request 'DELETE', "/teams/#{@id}/repos/#{orgName}/#{repoName}"
 
 
       class Organization
         constructor: (@name) ->
 
-          @getInfo = () ->
+          @getInfo = cbWrap () ->
             _request 'GET', "/orgs/#{@name}", null
 
           # - `billing_email`: Billing email address. This address is not publicized.
@@ -471,25 +488,25 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # - `email`
           # - `location`
           # - `name`
-          @updateInfo = (options) ->
+          @updateInfo = cbWrap (options) ->
             _request 'PATCH', "/orgs/#{@name}", options
 
-          @getTeams = () ->
+          @getTeams = cbWrap () ->
             _request 'GET', "/orgs/#{@name}/teams", null
 
           # `permission` can be one of `pull`, `push`, or `admin`
-          @createTeam = (name, repoNames=null, permission='pull') ->
+          @createTeam = cbWrap (name, repoNames=null, permission='pull') ->
             options = {name: name, permission: permission}
             options.repo_names = repoNames if repoNames
             _request 'POST', "/orgs/#{@name}/teams", options
 
-          @getMembers = () ->
+          @getMembers = cbWrap () ->
             _request 'GET', "/orgs/#{@name}/members", null
 
-          @isMember = (user) ->
+          @isMember = cbWrap (user) ->
             _request 'GET', "/orgs/#{@name}/members/#{user}", null, {isBoolean:true}
 
-          @removeMember = (user) ->
+          @removeMember = cbWrap (user) ->
             _request 'DELETE', "/orgs/#{@name}/members/#{user}", null
 
           # Create a repository
@@ -497,7 +514,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           #
           # Optional parameters are the same as `.getUser().createRepo()` with one addition:
           # - `team_id`:  number
-          @createRepo = (name, options={}) ->
+          @createRepo = cbWrap (name, options={}) ->
             options.name = name
             _request 'POST', "/orgs/#{@name}/repos", options
 
@@ -516,7 +533,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # -------
           # **Note:** This is here instead of on the `Repository` object
           # so it is less likely to accidentally be used.
-          @deleteRepo = () ->
+          @deleteRepo = cbWrap () ->
             _request 'DELETE', "#{_repoPath}"
 
           # Uses the cache if branch has not been changed
@@ -529,7 +546,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
 
           # Get a particular reference
           # -------
-          @getRef = (ref) ->
+          @getRef = cbWrap (ref) ->
             _request('GET', "#{_repoPath}/git/refs/#{ref}", null)
             .then (res) =>
               return res.object.sha
@@ -544,7 +561,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           #       "ref": "refs/heads/my-new-branch-name",
           #       "sha": "827efc6d56897b048c772eb4087f854f46256132"
           #     }
-          @createRef = (options) ->
+          @createRef = cbWrap (options) ->
             _request 'POST', "#{_repoPath}/git/refs", options
 
 
@@ -553,13 +570,13 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           #
           #     repo.deleteRef('heads/gh-pages')
           #     repo.deleteRef('tags/v1.0')
-          @deleteRef = (ref) ->
+          @deleteRef = cbWrap (ref) ->
             _request 'DELETE', "#{_repoPath}/git/refs/#{ref}", @options
 
 
           # List all branches of a repository
           # -------
-          @getBranches = () ->
+          @getBranches = cbWrap () ->
             _request('GET', "#{_repoPath}/git/refs/heads", null)
             .then (heads) =>
               return _.map(heads, (head) ->
@@ -571,13 +588,13 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
 
           # Retrieve the contents of a blob
           # -------
-          @getBlob = (sha, isBase64) ->
+          @getBlob = cbWrap (sha, isBase64) ->
             _request 'GET', "#{_repoPath}/git/blobs/#{sha}", null, {raw:true, isBase64:isBase64}
 
 
           # For a given file path, get the corresponding sha (blob for files, tree for dirs)
           # -------
-          @getSha = (branch, path) ->
+          @getSha = cbWrap (branch, path) ->
             # Just use head if path is empty
             return @getRef("heads/#{branch}") if path is ''
 
@@ -597,7 +614,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
 
           # Get contents (file/dir)
           # -------
-          @getContents = (path, sha=null) ->
+          @getContents = cbWrap (path, sha=null) ->
             queryString = ''
             if sha != null
               queryString = toQueryString({ref:sha})
@@ -611,7 +628,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # Retrieve the tree a commit points to
           # -------
           # Optionally set recursive to true
-          @getTree = (tree, options=null) ->
+          @getTree = cbWrap (tree, options=null) ->
             queryString = toQueryString(options)
             _request('GET', "#{_repoPath}/git/trees/#{tree}#{queryString}", null)
             .then (res) =>
@@ -622,7 +639,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
 
           # Post a new blob object, getting a blob SHA back
           # -------
-          @postBlob = (content, isBase64) ->
+          @postBlob = cbWrap (content, isBase64) ->
             if typeof (content) is 'string'
               # Base64 encode the content if it is binary (isBase64)
               content = base64encode(content) if isBase64
@@ -650,7 +667,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           #       type: 'blob'
           #       sha: blob
           #     } ]
-          @updateTreeMany = (baseTree, newTree) ->
+          @updateTreeMany = cbWrap (baseTree, newTree) ->
             data =
               base_tree: baseTree
               tree: newTree
@@ -665,7 +682,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # Post a new tree object having a file path pointer replaced
           # with a new blob SHA getting a tree SHA back
           # -------
-          @postTree = (tree) ->
+          @postTree = cbWrap (tree) ->
             _request('POST', "#{_repoPath}/git/trees", {tree: tree})
             .then (res) =>
               return res.sha
@@ -676,7 +693,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # Create a new commit object with the current commit SHA as the parent
           # and the new tree SHA, getting a commit SHA back
           # -------
-          @commit = (parents, tree, message) ->
+          @commit = cbWrap (parents, tree, message) ->
             parents = [parents] if not _.isArray(parents)
             data =
               message: message
@@ -691,13 +708,13 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
 
           # Update the reference of your head to point to the new commit SHA
           # -------
-          @updateHead = (head, commit) ->
+          @updateHead = cbWrap (head, commit) ->
             _request 'PATCH', "#{_repoPath}/git/refs/heads/#{head}", {sha: commit}
 
 
           # Get a single commit
           # --------------------
-          @getCommit = (sha) ->
+          @getCommit = cbWrap (sha) ->
             _request('GET', "#{_repoPath}/commits/#{sha}", null)
 
           # List commits on a repository.
@@ -709,7 +726,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # - `author`: GitHub login, name, or email by which to filter by commit author
           # - `since`: ISO 8601 date - only commits after this date will be returned
           # - `until`: ISO 8601 date - only commits before this date will be returned
-          @getCommits = (options={}) ->
+          @getCommits = cbWrap (options={}) ->
             options = _.extend {}, options
 
             # Converts a Date object to a string
@@ -739,7 +756,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
 
           # Get a single commit
           # --------------------
-          @getCommit = (sha) -> _git.getCommit(sha)
+          @getCommit = cbWrap (sha) -> _git.getCommit(sha)
 
           # List commits on a branch.
           # -------
@@ -749,7 +766,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # - `author`: GitHub login, name, or email by which to filter by commit author
           # - `since`: ISO 8601 date - only commits after this date will be returned
           # - `until`: ISO 8601 date - only commits before this date will be returned
-          @getCommits = (options={}) ->
+          @getCommits = cbWrap (options={}) ->
             options = _.extend {}, options
             # Limit to the current branch
             _getRef()
@@ -763,7 +780,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
 
           # Creates a new branch based on the current reference of this branch
           # -------
-          @createBranch = (newBranchName) ->
+          @createBranch = cbWrap (newBranchName) ->
             _getRef()
             .then (branch) =>
               _git.getSha(branch, '')
@@ -777,7 +794,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # Read file at given path
           # -------
           # Set `isBase64=true` to get back a base64 encoded binary file
-          @read = (path, isBase64) ->
+          @read = cbWrap (path, isBase64) ->
             _getRef()
             .then (branch) =>
               _git.getSha(branch, path)
@@ -792,7 +809,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
 
           # Get contents at given path
           # -------
-          @contents = (path) ->
+          @contents = cbWrap (path) ->
             _getRef()
             .then (branch) =>
               _git.getSha(branch, '')
@@ -806,7 +823,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
 
           # Remove a file from the tree
           # -------
-          @remove = (path, message="Removed #{path}") ->
+          @remove = cbWrap (path, message="Removed #{path}") ->
             _getRef()
             .then (branch) =>
               _git._updateTree(branch)
@@ -833,7 +850,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
 
           # Move a file to a new location
           # -------
-          @move = (path, newPath, message="Moved #{path}") ->
+          @move = cbWrap (path, newPath, message="Moved #{path}") ->
             _getRef()
             .then (branch) =>
               _git._updateTree(branch)
@@ -861,7 +878,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           #
           # Optionally takes a `parentCommitSha` which will be used as the
           # parent of this commit
-          @write = (path, content, message="Changed #{path}", isBase64, parentCommitSha=null) ->
+          @write = cbWrap (path, content, message="Changed #{path}", isBase64, parentCommitSha=null) ->
             contents = {}
             contents[path] =
               content: content
@@ -888,7 +905,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           #
           # Optionally takes an array of `parentCommitShas` which will be used as the
           # parents of this commit.
-          @writeMany = (contents, message="Changed Multiple", parentCommitShas=null) ->
+          @writeMany = cbWrap (contents, message="Changed Multiple", parentCommitShas=null) ->
             # This method:
             #
             # 0. Finds the latest commit if one is not provided
@@ -913,9 +930,9 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
                       sha: blob
                     }
                 # 3. Wait on all the new blobs to finish
-                jQuery.when.apply(jQuery, promises)
+                $.when.apply($, promises)
                 .then (newTree1, newTree2, newTreeN) =>
-                  newTrees = _.toArray(arguments) # Convert args from jQuery.when back to an array. kludgy
+                  newTrees = _.toArray(arguments) # Convert args from $.when back to an array. kludgy
                   _git.updateTreeMany(parentCommitShas, newTrees)
                   .then (tree) => # 4. Commit and update the branch
                     _git.commit(parentCommitShas, tree, message)
@@ -948,9 +965,6 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # Set the `git` instance variable
           @git = new GitRepo(_user, _repo)
           @repoPath = "/repos/#{_user}/#{_repo}"
-          @currentTree =
-            branch: null
-            sha: null
 
           # List all branches of a repository
           # -------
@@ -980,24 +994,24 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
 
           # Get repository information
           # -------
-          @getInfo = () ->
+          @getInfo = cbWrap () ->
             _request 'GET', @repoPath, null
 
           # Get contents
           # --------
-          @getContents = (branch, path) ->
+          @getContents = cbWrap (branch, path) ->
             _request 'GET', "#{@repoPath}/contents?ref=#{branch}", {path: path}
 
 
           # Fork repository
           # -------
-          @fork = () ->
+          @fork = cbWrap () ->
             _request 'POST', "#{@repoPath}/forks", null
 
 
           # Create pull request
           # --------
-          @createPullRequest = (options) ->
+          @createPullRequest = cbWrap (options) ->
             _request 'POST', "#{@repoPath}/pulls", options
 
 
@@ -1009,23 +1023,23 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # - `author`: GitHub login, name, or email by which to filter by commit author
           # - `since`: ISO 8601 date - only commits after this date will be returned
           # - `until`: ISO 8601 date - only commits before this date will be returned
-          @getCommits = (options) ->
+          @getCommits = cbWrap (options) ->
             @git.getCommits(options)
 
 
           # List repository events
           # -------
-          @getEvents = () ->
+          @getEvents = cbWrap () ->
             _request 'GET', "#{@repoPath}/events", null
 
           # List Issue events for a Repository
           # -------
-          @getIssueEvents = () ->
+          @getIssueEvents = cbWrap () ->
             _request 'GET', "#{@repoPath}/issues/events", null
 
           # List events for a network of Repositories
           # -------
-          @getNetworkEvents = () ->
+          @getNetworkEvents = cbWrap () ->
             _request 'GET', "/networks/#{_owner}/#{_repo}/events", null
 
 
@@ -1037,7 +1051,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # - `participating`: `true` to show only notifications in which
           #   the user is directly participating or mentioned.
           # - `since`: Optional time.
-          @getNotifications = (options={}) ->
+          @getNotifications = cbWrap (options={}) ->
             # Converts a Date object to a string
             getDate = (time) ->
               return time.toISOString() if Date == time.constructor
@@ -1056,10 +1070,10 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # are included in the list of collaborators.
           # Otherwise, only users with access to the repository are
           # returned in the collaborators list.
-          @getCollaborators = () ->
+          @getCollaborators = cbWrap () ->
             _request 'GET', "#{@repoPath}/collaborators", null
 
-          @isCollaborator = (username=null) ->
+          @isCollaborator = cbWrap (username=null) ->
             throw new Error 'BUG: username is required' if not username
             _request 'GET', "#{@repoPath}/collaborators/#{username}", null, {isBoolean:true}
 
@@ -1067,10 +1081,10 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # -------
           # True if the authenticated user has permission
           # to commit to this repository.
-          @canCollaborate = () ->
+          @canCollaborate = cbWrap () ->
             # Short-circuit if no credentials provided
             if not (clientOptions.password or clientOptions.token)
-              return (new jQuery.Deferred()).resolve(false)
+              return (new $.Deferred()).resolve(false)
 
             _client.getLogin()
             .then (login) =>
@@ -1085,12 +1099,12 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
 
           # List all hooks
           # -------
-          @getHooks = () ->
+          @getHooks = cbWrap () ->
             _request 'GET', "#{@repoPath}/hooks", null
 
           # Get single hook
           # -------
-          @getHook = (id) ->
+          @getHook = cbWrap (id) ->
             _request 'GET', "#{@repoPath}/hooks/#{id}", null
 
           # Create a new hook
@@ -1102,7 +1116,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           #                              These settings vary between the services and are defined in the github-services repo.
           # - `events` (Optional array) : Determines what events the hook is triggered for. Default: ["push"].
           # - `active` (Optional boolean) : Determines whether the hook is actually triggered on pushes.
-          @createHook = (name, config, events=['push'], active=true) ->
+          @createHook = cbWrap (name, config, events=['push'], active=true) ->
             data =
               name: name
               config: config
@@ -1122,7 +1136,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # - `addEvents` (Optional array) : Determines a list of events to be added to the list of events that the Hook triggers for.
           # - `removeEvents` (Optional array) : Determines a list of events to be removed from the list of events that the Hook triggers for.
           # - `active` (Optional boolean) : Determines whether the hook is actually triggered on pushes.
-          @editHook = (id, config=null, events=null, addEvents=null, removeEvents=null, active=null) ->
+          @editHook = cbWrap (id, config=null, events=null, addEvents=null, removeEvents=null, active=null) ->
             data = {}
             data.config = config if config != null
             data.events = events if events != null
@@ -1138,17 +1152,17 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # repository if the hook is subscribed to push events.
           # If the hook is not subscribed to push events, the server will
           # respond with 204 but no test POST will be generated.
-          @testHook = (id) ->
+          @testHook = cbWrap (id) ->
             _request 'POST', "#{@repoPath}/hooks/#{id}/tests", null
 
           # Delete a hook
           # -------
-          @deleteHook = (id) ->
+          @deleteHook = cbWrap (id) ->
             _request 'DELETE', "#{@repoPath}/hooks/#{id}", null
 
           # List all Languages
           # -------
-          @getLanguages = ->
+          @getLanguages = cbWrap () ->
             _request 'GET', "#{@repoPath}/languages", null
 
 
@@ -1162,7 +1176,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
 
           # Read the gist
           # --------
-          @read = () ->
+          @read = cbWrap () ->
             _request 'GET', _gistPath, null
 
 
@@ -1178,7 +1192,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           #         "content": "String file contents"
           #       }
           #     }
-          @create = (files, isPublic=false, description=null) ->
+          @create = cbWrap (files, isPublic=false, description=null) ->
             options =
               isPublic: isPublic
               files: files
@@ -1188,13 +1202,13 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
 
           # Delete the gist
           # --------
-          @delete = () ->
+          @delete = cbWrap () ->
             _request 'DELETE', _gistPath, null
 
 
           # Fork a gist
           # --------
-          @fork = () ->
+          @fork = cbWrap () ->
             _request 'POST', "#{_gistPath}/forks", null
 
 
@@ -1210,25 +1224,26 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # **NOTE:** All files from the previous version of the gist are carried
           # over by default if not included in the hash. Deletes can be performed
           # by including the filename with a null hash.
-          @update = (files, description=null) ->
+          @update = cbWrap (files, description=null) ->
             options = {files: files}
             options.description = description if description?
             _request 'PATCH', _gistPath, options
 
           # Star a gist
           # -------
-          @star = () ->
+          @star = cbWrap () ->
             _request 'PUT', "#{_gistPath}/star"
 
           # Unstar a gist
           # -------
-          @unstar = () ->
+          @unstar = cbWrap () ->
             _request 'DELETE', "#{_gistPath}/star"
 
           # Check if a gist is starred
           # -------
-          @isStarred = () ->
+          @isStarred = cbWrap () ->
             _request 'GET', "#{_gistPath}", null, {isBoolean:true}
+
 
 
       # Top Level API
@@ -1259,7 +1274,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
       # When using OAuth this is unknown but is necessary to
       # determine if the current user has commit access to a
       # repository
-      @getLogin = () ->
+      @getLogin = cbWrap () ->
         # 3 cases:
         # 1. No authentication provided
         # 2. Username (and password) provided
@@ -1272,7 +1287,6 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           ret = new jQuery.Deferred()
           ret.resolve(null)
           return ret
-
 
 
   # Return the class for assignment
