@@ -1004,6 +1004,11 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           @getInfo = () ->
             _request 'GET', @repoPath, null
 
+          # Get the README
+          # --------
+          @getReadme = (branch) ->
+            _request 'GET', "#{@repoPath}/readme?ref=#{branch}"
+
           # Get contents
           # --------
           @getContents = (branch, path) ->

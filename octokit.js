@@ -885,6 +885,9 @@
             this.getInfo = function() {
               return _request('GET', this.repoPath, null);
             };
+            this.getReadme = function(branch) {
+              return _request('GET', "" + this.repoPath + "/readme?ref=" + branch);
+            };
             this.getContents = function(branch, path) {
               return _request('GET', "" + this.repoPath + "/contents?ref=" + branch, {
                 path: path
