@@ -141,18 +141,20 @@
               return promise.resolve(data, textStatus, jqXHR);
             }
           }).fail(function(unused, msg, desc) {
-            var json;
+            var json, _ref;
             if (options.isBoolean && 404 === jqXHR.status) {
               return promise.resolve(false);
             } else {
-              if (jqXHR.getResponseHeader('Content-Type') !== 'application/json; charset=utf-8') {
+              if ((_ref = jqXHR.getResponseHeader('Content-Type')) !== 'application/vnd.github.raw; charset=utf-8' && _ref !== 'application/json; charset=utf-8') {
                 return promise.reject({
                   error: jqXHR.responseText,
                   status: jqXHR.status,
                   _jqXHR: jqXHR
                 });
               } else {
-                if (jqXHR.responseText) {
+                if (jqXHR.responseText && typeof jqXHR.responseText === 'string' && jqXHR.responseText.length > 0) {
+                  promise.resolve(jqXHR.responseText);
+                } else if (jqXHR.responseText && typeof jqXHR.responseText === 'object') {
                   json = JSON.parse(jqXHR.responseText);
                 } else {
                   json = '';
@@ -893,6 +895,9 @@
             };
             this.getInfo = function() {
               return _request('GET', this.repoPath, null);
+            };
+            this.getReadme = function(branch) {
+              return _request('GET', "" + this.repoPath + "/readme?ref=" + branch);
             };
             this.getContents = function(branch, path) {
               return _request('GET', "" + this.repoPath + "/contents?ref=" + branch, {

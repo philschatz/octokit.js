@@ -166,12 +166,13 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
             promise.resolve(false)
 
           else
-
-            if jqXHR.getResponseHeader('Content-Type') != 'application/json; charset=utf-8'
+            if jqXHR.getResponseHeader('Content-Type') not in ['application/vnd.github.raw; charset=utf-8', 'application/json; charset=utf-8']
               promise.reject {error: jqXHR.responseText, status: jqXHR.status, _jqXHR: jqXHR}
 
             else
-              if jqXHR.responseText
+              if jqXHR.responseText && typeof jqXHR.responseText == 'string' && jqXHR.responseText.length > 0
+                promise.resolve(jqXHR.responseText)
+              else if jqXHR.responseText && typeof jqXHR.responseText == 'object'
                 json = JSON.parse jqXHR.responseText
               else
                 # In the case of 404 errors, `responseText` is an empty string
@@ -1003,6 +1004,12 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # -------
           @getInfo = () ->
             _request 'GET', @repoPath, null
+
+          # Get the readme
+          # --------
+          @getReadme = (branch) ->
+            _request 'GET', "#{@repoPath}/readme?ref=#{branch}"
+
 
           # Get contents
           # --------
