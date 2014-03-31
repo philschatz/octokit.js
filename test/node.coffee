@@ -1,4 +1,3 @@
-_         = require('underscore')
 chai      = require('chai')
 Octokit   = require('../octokit').new
 makeTests = require('./common').makeTests
@@ -11,4 +10,4 @@ btoa = (str) ->
   buffer = new Buffer str, 'binary'
   buffer.toString 'base64'
 
-makeTests(_, assert, expect, btoa, Octokit)
+makeTests(assert, expect, btoa, Octokit)

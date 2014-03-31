@@ -21,6 +21,8 @@ module.exports = (grunt) ->
         max_line_length:
           level: 'error'
           value: 150
+        no_unnecessary_fat_arrows:
+          level: "ignore"
 
       source: ['octokit.coffee']
       grunt: 'Gruntfile.coffee'

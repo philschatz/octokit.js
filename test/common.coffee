@@ -1,4 +1,4 @@
-makeTests = (_, assert, expect, btoa, Octokit) ->
+makeTests = (assert, expect, btoa, Octokit) ->
 
   USERNAME = 'octokit-test'
   TOKEN = 'dca7f85a5911df8e9b7aeb4c5be8f5f50806ac49'
@@ -21,13 +21,18 @@ makeTests = (_, assert, expect, btoa, Octokit) ->
 
   IS_NODE = !! module?
 
+  some = (arr, fn) ->
+    for entry in arr
+      do (entry) ->
+        if fn(entry) == true
+          return true
+    return false
 
   trapFail = (promise) ->
     promise.fail (err) ->
       console.error(JSON.stringify(err))
       assert.fail(err)
     return promise
-
 
   helper1 = (done, promise, func) ->
     return trapFail(promise)
@@ -39,9 +44,8 @@ makeTests = (_, assert, expect, btoa, Octokit) ->
     .then(func)
 
   arrayContainsKey = (arr, key, value) ->
-    _.some arr, (entry) ->
+    some arr, (entry) ->
       return entry[key] == value
-
 
   describe 'Octokit', () ->
     @timeout(LONG_TIMEOUT)
@@ -246,6 +250,12 @@ makeTests = (_, assert, expect, btoa, Octokit) ->
 
           helper1 done, STATE[GH].getOrg(ORG_NAME).getInfo(), (info) ->
             expect(info.login).to.equal(ORG_NAME)
+
+      describe 'Releases', () ->
+        it 'should be able to get releases', (done) ->
+
+          helper1 done, STATE[REPO].getReleases(), (releases) ->
+            expect(releases).to.have.length(0)
 
       describe 'Events:', () ->
         itIsOk(REPO, 'getEvents')

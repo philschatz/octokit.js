@@ -163,6 +163,11 @@ repo.getLanguages()
 .done(function(events) {});
 ```
 
+Get releases
+```js
+repo.getReleases()
+.done(function(releases) {});
+```
 
 ### Branch API
 

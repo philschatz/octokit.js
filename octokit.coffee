@@ -14,17 +14,76 @@
 #     For all details and documentation:
 #     http://substance.io/michael/github
 
+
+# Underscore shim
+# =========
+#
+# The following code is a shim for the underscore.js functions this code relise on
+
+underscore = {}
+
+underscore.isEmpty = (object) ->
+  Object.keys(object).length == 0
+
+underscore.isArray = (object) ->
+  !!object.slice
+
+underscore.defaults = (object, values) ->
+  for key in Object.keys(values)
+    do (key) ->
+      object[key] ?= values[key]
+
+underscore.each = (object, fn) ->
+  if underscore.isArray(object)
+    object.forEach(fn)
+  arr = []
+  for key in Object.keys(object)
+    do (key) ->
+      fn(object[key])
+
+underscore.pairs = (object) ->
+  arr = []
+  for key in Object.keys(object)
+    do (key) ->
+      arr.push([key, object[key]])
+  return arr
+
+underscore.map = (object, fn) ->
+  if underscore.isArray(object)
+    return object.map(fn)
+  arr = []
+  for key in Object.keys(object)
+    do (key) ->
+      arr.push(fn(object[key]))
+  arr
+
+underscore.last = (object, n) ->
+  len = object.length
+  object.slice(len - n, len)
+
+underscore.select = (object, fn) ->
+  object.filter(fn)
+
+underscore.extend = (object, template) ->
+  for key in Object.keys(template)
+    do (key) ->
+      object[key] = template[key]
+
+underscore.toArray = (object) ->
+  return Array.prototype.slice.call(object)
+
 # Generate a Github class
 # =========
 #
 # Depending on how this is loaded (nodejs, requirejs, globals)
 # the actual underscore, jQuery.ajax/Deferred, and base64 encode functions may differ.
-makeOctokit = (_, jQuery, base64encode, userAgent) =>
+makeOctokit = (jQuery, base64encode, userAgent) =>
+
   class Octokit
 
     constructor: (clientOptions={}) ->
       # Provide an option to override the default URL
-      _.defaults clientOptions,
+      underscore.defaults clientOptions,
         rootURL: 'https://api.github.com'
         useETags: true
         usePostInsteadOfPatch: false
@@ -188,10 +247,10 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
       toQueryString = (options) ->
 
         # Returns '' if `options` is empty so this string can always be appended to a URL
-        return '' if _.isEmpty(options)
+        return '' if underscore.isEmpty(options)
 
         params = []
-        _.each _.pairs(options), ([key, value]) ->
+        underscore.each underscore.pairs(options), ([key, value]) ->
           params.push "#{key}=#{encodeURIComponent(value)}"
         return "?#{params.join('&')}"
 
@@ -385,13 +444,13 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # Add Emails associated with this user
           # -------
           @addEmail = (emails) ->
-            emails = [emails] if !_.isArray(emails)
+            emails = [emails] if !underscore.isArray(emails)
             _request 'POST', '/user/emails', emails
 
           # Remove Emails associated with this user
           # -------
           @addEmail = (emails) ->
-            emails = [emails] if !_.isArray(emails)
+            emails = [emails] if !underscore.isArray(emails)
             _request 'DELETE', '/user/emails', emails
 
           # Get a single public key
@@ -572,8 +631,8 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           @getBranches = () ->
             _request('GET', "#{_repoPath}/git/refs/heads", null)
             .then (heads) =>
-              return _.map(heads, (head) ->
-                _.last head.ref.split("/")
+              return underscore.map(heads, (head) ->
+                underscore.last head.ref.split("/")
               )
             # Return the promise
             .promise()
@@ -593,7 +652,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
 
             @getTree(branch, {recursive:true})
             .then (tree) =>
-              file = _.select(tree, (file) ->
+              file = underscore.select(tree, (file) ->
                 file.path is path
               )[0]
               return file?.sha if file?.sha
@@ -697,7 +756,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # and the new tree SHA, getting a commit SHA back
           # -------
           @commit = (parents, tree, message) ->
-            parents = [parents] if not _.isArray(parents)
+            parents = [parents] if not underscore.isArray(parents)
             data =
               message: message
               parents: parents
@@ -732,7 +791,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # - `since`: ISO 8601 date - only commits after this date will be returned
           # - `until`: ISO 8601 date - only commits before this date will be returned
           @getCommits = (options={}) ->
-            options = _.extend {}, options
+            options = underscore.extend {}, options
 
             # Converts a Date object to a string
             getDate = (time) ->
@@ -772,7 +831,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           # - `since`: ISO 8601 date - only commits after this date will be returned
           # - `until`: ISO 8601 date - only commits before this date will be returned
           @getCommits = (options={}) ->
-            options = _.extend {}, options
+            options = underscore.extend {}, options
             # Limit to the current branch
             _getRef()
             .then (branch) ->
@@ -853,7 +912,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
               .then (latestCommit) =>
                 _git.getTree(latestCommit, {recursive:true})
                 .then (tree) => # Update Tree
-                  _.each tree, (ref) ->
+                  underscore.each tree, (ref) ->
                     ref.path = newPath  if ref.path is path
                     delete ref.sha  if ref.type is 'tree'
 
@@ -912,7 +971,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
             _getRef()
             .then (branch) => # See below for Step 0.
               afterParentCommitShas = (parentCommitShas) => # 1. Asynchronously send all the files as new blobs.
-                promises = _.map _.pairs(contents), ([path, data]) ->
+                promises = underscore.map underscore.pairs(contents), ([path, data]) ->
                   # `data` can be an object or a string.
                   # If it is a string assume isBase64 is false and the string is the content
                   content = data.content or data
@@ -928,7 +987,7 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
                 # 3. Wait on all the new blobs to finish
                 jQuery.when.apply(jQuery, promises)
                 .then (newTree1, newTree2, newTreeN) =>
-                  newTrees = _.toArray(arguments) # Convert args from jQuery.when back to an array. kludgy
+                  newTrees = underscore.toArray(arguments) # Convert args from jQuery.when back to an array. kludgy
                   _git.updateTreeMany(parentCommitShas, newTrees)
                   .then (tree) => # 4. Commit and update the branch
                     _git.commit(parentCommitShas, tree, message)
@@ -1188,6 +1247,11 @@ makeOctokit = (_, jQuery, base64encode, userAgent) =>
           @getLanguages = ->
             _request 'GET', "#{@repoPath}/languages", null
 
+          # List all releases
+          # -------
+          @getReleases = () ->
+            _request 'GET', "#{@repoPath}/releases", null
+
 
       # Gist API
       # -------
@@ -1367,7 +1431,7 @@ if exports?
   encode = (str) ->
     buffer = new Buffer(str, 'binary')
     return buffer.toString('base64')
-  Octokit = makeOctokit(underscoreShim, jQuery, encode, 'octokit') # `User-Agent` (for nodejs)
+  Octokit = makeOctokit(jQuery, encode, 'octokit') # `User-Agent` (for nodejs)
   exports.new = (options) -> new Octokit(options)
 
 # If requirejs is detected then define this module
@@ -1378,21 +1442,20 @@ else if @define?
     # Otherwise, try to use the javascript Base64 code.
     if @btoa
       @define moduleName, ['jquery'], (jQuery) ->
-        return makeOctokit(underscoreShim, jQuery, @btoa)
+        return makeOctokit(jQuery, @btoa)
     else
       @define moduleName, ['jquery', 'base64'], (jQuery, Base64) ->
-        return makeOctokit(underscoreShim, jQuery, Base64.encode)
+        return makeOctokit(jQuery, Base64.encode)
 
-# If a global jQuery and underscore is loaded then use it
+# If a global jQuery is loaded, use it
 else if @jQuery and (@btoa or @Base64)
   # Use the `btoa` function if it is defined (Webkit/Mozilla) and fail back to
   # `Base64.encode` otherwise (IE)
   encode = @btoa or @Base64.encode
-  Octokit = makeOctokit(underscoreShim, @jQuery, encode)
+  Octokit = makeOctokit(@jQuery, encode)
   # Assign to a global `Octokit`
   @Octokit = Octokit
   @Github = Octokit
-
 
 # Otherwise, throw an error
 else
