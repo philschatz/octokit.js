@@ -15,65 +15,54 @@
   };
 
   underscore.defaults = function(object, values) {
-    var key, _fn, _i, _len, _ref;
+    var key, _i, _len, _ref;
     _ref = Object.keys(values);
-    _fn = function(key) {
-      return object[key] != null ? object[key] : object[key] = values[key];
-    };
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       key = _ref[_i];
-      _fn(key);
+      if (object[key] == null) {
+        object[key] = values[key];
+      }
     }
     return object;
   };
 
   underscore.each = function(object, fn) {
-    var key, _fn, _i, _len, _ref;
+    var key, _i, _len, _ref;
     if (underscore.isArray(object)) {
       object.forEach(fn);
     } else {
       _ref = Object.keys(object);
-      _fn = function(key) {
-        return fn(object[key]);
-      };
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         key = _ref[_i];
-        _fn(key);
+        fn(object[key]);
       }
     }
     return object;
   };
 
   underscore.pairs = function(object) {
-    var arr, key;
-    arr = (function() {
-      var _i, _len, _ref, _results;
-      _ref = Object.keys(object);
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        key = _ref[_i];
-        _results.push([key, object[key]]);
-      }
-      return _results;
-    })();
-    return arr;
+    var key, _i, _len, _ref, _results;
+    _ref = Object.keys(object);
+    _results = [];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      key = _ref[_i];
+      _results.push([key, object[key]]);
+    }
+    return _results;
   };
 
   underscore.map = function(object, fn) {
-    var arr, key, _fn, _i, _len, _ref;
+    var key, _i, _len, _ref, _results;
     if (underscore.isArray(object)) {
       return object.map(fn);
     }
-    arr = [];
     _ref = Object.keys(object);
-    _fn = function(key) {
-      return arr.push(fn(object[key]));
-    };
+    _results = [];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       key = _ref[_i];
-      _fn(key);
+      _results.push(arr.push(fn(object[key])));
     }
-    return arr;
+    return _results;
   };
 
   underscore.last = function(object, n) {
@@ -87,16 +76,13 @@
   };
 
   underscore.extend = function(object, template) {
-    var key, _i, _len, _ref, _results;
+    var key, _i, _len, _ref;
     _ref = Object.keys(template);
-    _results = [];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       key = _ref[_i];
-      _results.push((function(key) {
-        return object[key] = template[key];
-      })(key));
+      object[key] = template[key];
     }
-    return _results;
+    return object;
   };
 
   underscore.toArray = function(object) {

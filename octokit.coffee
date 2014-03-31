@@ -30,32 +30,26 @@ underscore.isArray = (object) ->
 
 underscore.defaults = (object, values) ->
   for key in Object.keys(values)
-    do (key) ->
-      object[key] ?= values[key]
+    object[key] ?= values[key]
+  return object
 
 underscore.each = (object, fn) ->
   if underscore.isArray(object)
     object.forEach(fn)
-  arr = []
-  for key in Object.keys(object)
-    do (key) ->
+  else
+    for key in Object.keys(object)
       fn(object[key])
+  return object
 
 underscore.pairs = (object) ->
-  arr = []
   for key in Object.keys(object)
-    do (key) ->
-      arr.push([key, object[key]])
-  return arr
+    [key, object[key]]
 
 underscore.map = (object, fn) ->
   if underscore.isArray(object)
     return object.map(fn)
-  arr = []
   for key in Object.keys(object)
-    do (key) ->
-      arr.push(fn(object[key]))
-  arr
+    arr.push(fn(object[key]))
 
 underscore.last = (object, n) ->
   len = object.length
@@ -66,11 +60,12 @@ underscore.select = (object, fn) ->
 
 underscore.extend = (object, template) ->
   for key in Object.keys(template)
-    do (key) ->
-      object[key] = template[key]
+    object[key] = template[key]
+  return object
 
 underscore.toArray = (object) ->
-  return Array.prototype.slice.call(object)
+  Array.prototype.slice.call(object)
+
 
 # Generate a Github class
 # =========
