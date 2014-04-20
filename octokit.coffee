@@ -1094,10 +1094,54 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
               _request 'POST', "#{@repoPath}/forks", null
 
 
-          # Create pull request
+          # Create a new Pull Request
           # --------
           @createPullRequest = (options) ->
             _request 'POST', "#{@repoPath}/pulls", options
+
+          # Get a list of Pull Requests
+          # --------
+          @getPullRequests = (options={}) ->
+            _request 'GET', "#{@repoPath}/pulls", options
+
+          # Get a single Pull Request
+          # --------
+          @getPullRequest = (id) ->
+            throw new Error('BUG: id is required') if not id
+            _request 'GET', "#{@repoPath}/pulls/#{id}", null
+
+          # Update the Info of a Pull Request
+          # --------
+          @updatePullRequest = (id, options) ->
+            throw new Error('BUG: id is required') if not id
+            _request 'PATCH', "#{@repoPath}/pulls/#{id}", options
+
+          # List commits on a pull request
+          # --------
+          @getPullRequestCommits = (id) ->
+            throw new Error('BUG: id is required') if not id
+            _request 'GET', "#{@repoPath}/pulls/#{id}/commits", null
+
+          # List pull requests files
+          # --------
+          @getPullRequestFiles = (id) ->
+            throw new Error('BUG: id is required') if not id
+            _request 'GET', "#{@repoPath}/pulls/#{id}/files", null
+
+          # Get if a pull request has been merged
+          # --------
+          @isPullRequestMerged = (id) ->
+            throw new Error('BUG: id is required') if not id
+            _request 'GET', "#{@repoPath}/pulls/#{id}/merge", null
+
+          # Merge a pull request (Merge Button)
+          # --------
+          @mergePullRequest = (id, message=null) ->
+            throw new Error('BUG: id is required') if not id
+            options = null
+            options = {commit_message: message} if message
+            _request 'PUT', "#{@repoPath}/pulls/#{id}/merge", options
+
 
 
           # Get recent commits to the repository

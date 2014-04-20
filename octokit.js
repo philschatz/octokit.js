@@ -1059,6 +1059,57 @@
             this.createPullRequest = function(options) {
               return _request('POST', "" + this.repoPath + "/pulls", options);
             };
+            this.getPullRequests = function(options) {
+              if (options == null) {
+                options = {};
+              }
+              return _request('GET', "" + this.repoPath + "/pulls", options);
+            };
+            this.getPullRequest = function(id) {
+              if (!id) {
+                throw new Error('BUG: id is required');
+              }
+              return _request('GET', "" + this.repoPath + "/pulls/" + id, null);
+            };
+            this.updatePullRequest = function(id, options) {
+              if (!id) {
+                throw new Error('BUG: id is required');
+              }
+              return _request('PATCH', "" + this.repoPath + "/pulls/" + id, options);
+            };
+            this.getPullRequestCommits = function(id) {
+              if (!id) {
+                throw new Error('BUG: id is required');
+              }
+              return _request('GET', "" + this.repoPath + "/pulls/" + id + "/commits", null);
+            };
+            this.getPullRequestFiles = function(id) {
+              if (!id) {
+                throw new Error('BUG: id is required');
+              }
+              return _request('GET', "" + this.repoPath + "/pulls/" + id + "/files", null);
+            };
+            this.isPullRequestMerged = function(id) {
+              if (!id) {
+                throw new Error('BUG: id is required');
+              }
+              return _request('GET', "" + this.repoPath + "/pulls/" + id + "/merge", null);
+            };
+            this.mergePullRequest = function(id, message) {
+              if (message == null) {
+                message = null;
+              }
+              if (!id) {
+                throw new Error('BUG: id is required');
+              }
+              options = null;
+              if (message) {
+                options = {
+                  commit_message: message
+                };
+              }
+              return _request('PUT', "" + this.repoPath + "/pulls/" + id + "/merge", options);
+            };
             this.getCommits = function(options) {
               return this.git.getCommits(options);
             };
