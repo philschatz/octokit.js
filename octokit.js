@@ -1279,7 +1279,16 @@
           });
         };
         this.getOrg = function(name) {
+          if (!name) {
+            throw new Error('BUG! name argument is required');
+          }
           return new Organization(name);
+        };
+        this.getTeam = function(id) {
+          if (!id) {
+            throw new Error('BUG! id argument is required');
+          }
+          return new Team(id);
         };
         this.getUser = function(login) {
           if (login == null) {

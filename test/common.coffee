@@ -251,11 +251,19 @@ makeTests = (assert, expect, btoa, Octokit) ->
           helper1 done, STATE[REPO].setDefaultBranch(DEFAULT_BRANCH), (result) ->
             expect(result.default_branch).to.equal(DEFAULT_BRANCH)
 
-      describe 'fetch organization', () ->
-        it 'should be able to fetch organization info', (done) ->
+      describe 'fetch Organization', () ->
+        it 'should be able to fetch Organization info', (done) ->
 
           helper1 done, STATE[GH].getOrg(ORG_NAME).getInfo(), (info) ->
             expect(info.login).to.equal(ORG_NAME)
+
+        it 'should be able to fetch Team info', (done) ->
+
+          helper2 STATE[GH].getOrg(ORG_NAME).getTeams(), (teams) ->
+            expect(teams).to.not.have.length(0)
+            helper1 done, STATE[GH].getTeam(teams[0].id).getInfo(), (info) ->
+              expect(info.id).to.equal(teams[0].id)
+
 
       describe 'Releases', () ->
         it 'should be able to get releases', (done) ->

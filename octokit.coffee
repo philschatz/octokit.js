@@ -1355,7 +1355,12 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
         )
 
       @getOrg = (name) ->
+        throw new Error('BUG! name argument is required') if not name
         new Organization(name)
+
+      @getTeam = (id) ->
+        throw new Error('BUG! id argument is required') if not id
+        new Team(id)
 
       # API for viewing info for arbitrary users or the current user
       # if no arguments are provided.
