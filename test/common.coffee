@@ -1,3 +1,19 @@
+if exports?
+  sepia = require('sepia')
+  path  = require('path')
+  resetFixture = () ->
+    sepia.fixtureDir(path.join(process.cwd(), "fixtures/generated"))
+  setFixture = (name) ->
+    name = name.toLowerCase()
+    name = name.replace(/[\ \,\+]/g, '-')
+    name = name.replace(/[\#\(\)\[\]]/g, '')
+    sepia.fixtureDir(path.join(process.cwd(), "fixtures/#{name}"))
+
+else
+  resetFixture = () ->
+  setFixture = (name) ->
+
+
 makeTests = (assert, expect, btoa, Octokit) ->
 
   USERNAME = 'octokit-test'
@@ -67,6 +83,9 @@ makeTests = (assert, expect, btoa, Octokit) ->
         helper1 done, STATE[obj][funcName](), (val) ->
           expect(val).to.be.ok
 
+    beforeEach () ->
+      resetFixture()
+
     before () ->
       options =
         token: TOKEN
@@ -89,6 +108,9 @@ makeTests = (assert, expect, btoa, Octokit) ->
     describe 'Repo:', () ->
       @timeout(LONG_TIMEOUT)
       PREV_SHA = null
+
+      beforeEach () ->
+        resetFixture()
 
       before (done) ->
         STATE[REPO] = STATE[GH].getRepo(REPO_USER, REPO_NAME)
@@ -155,6 +177,9 @@ makeTests = (assert, expect, btoa, Octokit) ->
         promise.catch?(createRepo) or promise.fail(createRepo)
 
       describe 'Initially:', () ->
+        beforeEach () ->
+          setFixture("test-#{@currentTest.title}")
+
         it 'has one commit', (done) ->
           trapFail(STATE[REPO].getCommits())
           .then (val) ->
@@ -168,6 +193,9 @@ makeTests = (assert, expect, btoa, Octokit) ->
             done()
 
       describe 'Writing file(s):', () ->
+        beforeEach () ->
+          setFixture("test-#{@currentTest.title}")
+
         it 'commits a single text file', (done) ->
           FILE_PATH = 'test.txt'
           FILE_TEXT = 'Hello there'
@@ -224,6 +252,7 @@ makeTests = (assert, expect, btoa, Octokit) ->
             expect(canCollaborate).to.be.true
 
         it 'should be able to add and remove a collaborator', (done) ->
+          setFixture('test-collaborator')
           helper2 STATE[REPO].addCollaborator(OTHER_USERNAME), (added) ->
             expect(added).to.be.true
 
@@ -233,17 +262,20 @@ makeTests = (assert, expect, btoa, Octokit) ->
               helper2 STATE[REPO].removeCollaborator(OTHER_USERNAME), (removed) ->
                 expect(removed).to.be.true
 
+                setFixture('test-collaborator-alternate')
                 helper1 done, STATE[REPO].isCollaborator(OTHER_USERNAME), (canCollaborate) ->
                   expect(canCollaborate).to.be.false
 
       describe 'Editing Repository:', () ->
+        beforeEach () ->
+          setFixture("test-#{@currentTest.title}")
+
         it 'initially the repository homepage should be [REPO_HOMEPAGE]', (done) ->
           helper1 done, STATE[REPO].getInfo(), (info) ->
             expect(info.homepage).to.equal(REPO_HOMEPAGE)
 
         it 'should be able to edit the repo homepage', (done) ->
           helper2 STATE[REPO].updateInfo({name: REPO_NAME, homepage: OTHER_HOMEPAGE}), ->
-
             helper1 done, STATE[REPO].getInfo(), (info) ->
               expect(info.homepage).to.equal(OTHER_HOMEPAGE)
 
