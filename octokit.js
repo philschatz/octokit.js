@@ -1276,6 +1276,40 @@
           return Gist;
 
         })();
+
+        _search = function(type, q, sort, order) {
+          if (sort == null) {
+            sort = null;
+          }
+          if (order == null) {
+            order = 'desc';
+          }
+          params = {
+            q: q,
+            order: order
+          };
+          if (sort != null) {
+            params.sort = sort;
+          }
+          return _request('GET', '/search/' + type + toQueryString(params), null);
+        };
+
+        this.searchRepos = function(q, sort, order) {
+          return _search('repositories', q, sort, order);
+        };
+
+        this.searchCode = function(q, sort, order) {
+          return _search('code', q, sort, order);
+        };
+
+        this.searchIssues = function(q, sort, order) {
+          return _search('issues', q, sort, order);
+        };
+
+        this.searchUsers = function(q, sort, order) {
+          return _search('users', q, sort, order);
+        };
+
         this.getRepo = function(user, repo) {
           if (!user) {
             throw new Error('BUG! user argument is required');
