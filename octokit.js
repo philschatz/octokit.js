@@ -426,6 +426,41 @@
           queryString = toQueryString(options);
           return _request('GET', "/notifications" + queryString, null);
         };
+        Issue = (function() {
+          function Issue(owner, repo, number) {
+            var _repoPath = '/repos/' + owner + '/' + repo + '/issues';
+            this.number = number;
+            this.read = function() {
+              return _request('GET', _repoPath + '/' + this.number, null);
+            };
+            this.update = function(options) {
+              return _request('PATCH', _repoPath + '/' + this.number, options);
+            };
+            this.getComments = function() {
+              return _request('GET', _repoPath + '/' + this.number + '/comments', null);
+            };
+            this.getComment = function(id) {
+              return _request('GET', _repoPath + '/comments/' + id, null);
+            };
+            this.createComment = function(body) {
+              var options = {
+                body: body
+              };
+              return _request('POST', _repoPath + '/' + this.number + '/comments', options);
+            };
+            this.editComment = function(id, body) {
+              var options = {
+                body: body
+              };
+              return _request('POST', _repoPath + '/comments/' + id, options);
+            };
+            this.deleteComment = function(id) {
+              return _request('DELETE', _repoPath + '/comments/' + id, null);
+            };
+          }
+
+          return Issue;
+        })();
         User = (function() {
           function User(_username) {
             var _cachedInfo, _rootPath;
@@ -570,6 +605,13 @@
               currentPage = '?page=' + page;
               return _request('GET', '/users/' + username + '/received_events' + currentPage, null);
             };
+            this.getIssues = function(getAllOrgIssues, options) {
+              if (getOrgIssues) {
+                return _request('GET', "/issues", options);
+              } else {
+                return _request('GET', "/user/issues", options);
+              }
+            };
           }
 
           return AuthenticatedUser;
@@ -664,6 +706,9 @@
             };
             this.getRepos = function() {
               return _request('GET', "/orgs/" + this.name + "/repos?type=all", null);
+            };
+            this.getIssues = function(options) {
+              return _request('GET', "/orgs/" + this.name + "/issues", options);
             };
           }
 
@@ -1235,6 +1280,25 @@
             };
             this.getReleases = function() {
               return _request('GET', "" + this.repoPath + "/releases", null);
+            };
+            this.getIssues = function(options) {
+              return _request('GET', "" + this.repoPath + "/issues", options);
+            };
+            this.createIssue = function(title, options) {
+              options.title = title;
+              return _request('POST', "" + this.repoPath + "/issues", options);
+            };
+            this.getComments = function(options) {
+              return _request('GET', "" + this.repoPath + "/issues/comments", options);
+            };
+            this.getComment = function(id) {
+              return new Issue(_user, _repo).getComment(id);
+            };
+            this.editComment = function(id) {
+              return new Issue(_user, _repo).editComment(id);
+            };
+            this.deleteComment = function(id) {
+              return new Issue(_user, _repo).deleteComment(id);
             };
           }
 
