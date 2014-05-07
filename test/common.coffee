@@ -62,9 +62,9 @@ makeTests = (assert, expect, btoa, Octokit) ->
 
     STATE = {}
 
-    itIsOk = (obj, funcName) ->
+    itIsOk = (obj, funcName, args...) ->
       it "##{funcName}()", (done) ->
-        helper1 done, STATE[obj][funcName](), (val) ->
+        helper1 done, STATE[obj][funcName](args...), (val) ->
           expect(val).to.be.ok
 
     before () ->
@@ -85,6 +85,11 @@ makeTests = (assert, expect, btoa, Octokit) ->
     itIsOk(GH, 'getPublicGists')
     itIsOk(GH, 'getPublicEvents')
     #(GH, 'onRateLimitChanged(listener)')
+
+    itIsOk(GH, 'searchRepositories', 'octokit')
+    # itIsOk(GH, 'searchCode', 'octokit')
+    # itIsOk(GH, 'searchIssues', 'octokit')
+    # itIsOk(GH, 'searchUsers', 'octokit')
 
     describe 'Repo:', () ->
       @timeout(LONG_TIMEOUT)

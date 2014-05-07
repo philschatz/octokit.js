@@ -410,6 +410,42 @@
           queryString = toQueryString(options);
           return _request('GET', "/notifications" + queryString, null);
         };
+        this.searchRepositories = function(q, sort, order) {
+          var queryString;
+          queryString = toQueryString({
+            q: q,
+            sort: sort,
+            order: order
+          });
+          return _request('GET', "/search/repositories" + queryString, null);
+        };
+        this.searchCode = function(q, sort, order) {
+          var queryString;
+          queryString = toQueryString({
+            q: q,
+            sort: sort,
+            order: order
+          });
+          return _request('GET', "/search/code" + queryString, null);
+        };
+        this.searchIssues = function(q, sort, order) {
+          var queryString;
+          queryString = toQueryString({
+            q: q,
+            sort: sort,
+            order: order
+          });
+          return _request('GET', "/search/issues" + queryString, null);
+        };
+        this.searchUsers = function(q, sort, order) {
+          var queryString;
+          queryString = toQueryString({
+            q: q,
+            sort: sort,
+            order: order
+          });
+          return _request('GET', "/search/users" + queryString, null);
+        };
         User = (function() {
           function User(_username) {
             var _cachedInfo, _rootPath;

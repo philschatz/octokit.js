@@ -379,6 +379,22 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
         _request 'GET', "/notifications#{queryString}", null
 
 
+      @searchRepositories = (q, sort, order) ->
+        queryString = toQueryString {q, sort, order}
+        _request 'GET', "/search/repositories#{queryString}", null
+
+      @searchCode = (q, sort, order) ->
+        queryString = toQueryString {q, sort, order}
+        _request 'GET', "/search/code#{queryString}", null
+
+      @searchIssues = (q, sort, order) ->
+        queryString = toQueryString {q, sort, order}
+        _request 'GET', "/search/issues#{queryString}", null
+
+      @searchUsers = (q, sort, order) ->
+        queryString = toQueryString {q, sort, order}
+        _request 'GET', "/search/users#{queryString}", null
+
       # Github Users API
       # =======
       class User
