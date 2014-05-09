@@ -18,133 +18,136 @@ dasherize = (string) ->
 
 # Utility classes for various containerish calls:
 # like `following`, `members`, `collaborators`, `keys`, `emails`, `git.commits`, `stars`
-class Createable
-  constructor: (request, root) ->
-    @fetch  = () -> request('GET', root)
-    @create = (config) -> request('POST', root, config)
+Createable = (request, root) ->
+  fn = () -> request('GET', root)
+  fn.create = (config) -> request('POST', root, config)
+  fn
 
-class Removable
-  constructor: (request, root) ->
-    @fetch  = () -> request('GET', root)
-    @remove = (id) -> request('DELETE', "#{root}/#{id}")
+CreateRemovable = (request, root) ->
+  fn = () -> request('GET', root)
+  fn.remove = (id) -> request('DELETE', "#{root}/#{id}")
+  fn.create = (config) -> request('POST', root, config)
+  fn
 
-class CreateRemovable extends Removable
-  constructor: (request, root) ->
-    @fetch  = () -> request('GET', root)
-    @remove = (id) -> request('DELETE', "#{root}/#{id}")
-    @create = (config) -> request('POST', root, config)
+Addable = (request, root) ->
+  fn = () -> request('GET', root)
+  fn.add    = (id) -> request('PUT', "#{root}/#{id}", null, isBoolean:true)
+  fn.remove = (id) -> request('DELETE', "#{root}/#{id}", null, isBoolean:true)
+  fn
 
-class Addable
-  constructor: (request, root) ->
-    @fetch  = () -> request('GET', root)
-    @add    = (id) -> request('PUT', "#{root}/#{id}", null, isBoolean:true)
-    @remove = (id) -> request('DELETE', "#{root}/#{id}", null, isBoolean:true)
+Isable = (request, root) ->
+  fn = (id=null) ->
+    return request('GET', "#{root}/#{id}", null, isBoolean:true) if id
+    return request('GET', root)
+  fn.add    = (id) -> request('PUT', "#{root}/#{id}", null, isBoolean:true)
+  fn.remove = (id) -> request('DELETE', "#{root}/#{id}", null, isBoolean:true)
+  fn
 
-class Isable extends Addable
-  constructor: (request, root) ->
-    @fetch  = () -> request('GET', root)
-    @is     = (id) -> request('GET', "#{root}/#{id}", null, isBoolean:true)
-    @add    = (id) -> request('PUT', "#{root}/#{id}", null, isBoolean:true)
-    @remove = (id) -> request('DELETE', "#{root}/#{id}", null, isBoolean:true)
-
-class Toggle
-  constructor: (request, root) ->
-    @is     = () -> request('GET', root, null, isBoolean:true)
-    @add    = () -> request('PUT', root, null, isBoolean:true)
-    @remove = () -> request('DELETE', root, null, isBoolean:true)
-
+Toggle = (request, root) ->
+  fn = () -> request('GET', root, null, isBoolean:true)
+  fn.add    = () -> request('PUT', root, null, isBoolean:true)
+  fn.remove = () -> request('DELETE', root, null, isBoolean:true)
+  fn
 
 
 # # The Big containers: User, Repo, Gist, Team, Org
 
+class Base
+  _test: () -> throw new Error('BUG: Unimplemented method')
+  constructor: (request, json) ->
+    # json is the response JSON from GitHub
+    for key, val of json
+      @[key] = val
 
-class User
-  constructor: (request, id) ->
-    root = "/users/#{id}"
-    @fetch      = () -> request('GET', root)
-    @repos      = (config) -> request('GET', "#{root}/repos", config)
-    @orgs       = (config) -> request('GET', "#{root}/orgs")
-    @gists      = (config) -> request('GET', "#{root}/gists")
-    @followers  = (config) -> request('GET', "#{root}/followers")
+    @fetch = () => request('GET', @url)
+
+
+
+class User extends Base
+  _test: (obj) -> obj.type is 'User'
+  constructor: (request, json) ->
+    super
+    @repos      = (config) => request('GET', "#{@url}/repos", config)
+    @orgs       = (config) => request('GET', "#{@url}/orgs")
+    @gists      = (config) => request('GET', "#{@url}/gists")
+    @followers  = () => request('GET', "#{@url}/followers")
     @following =
-      fetch: () -> request('GET', "#{root}/following")
-      'is': (id) -> request('GET', "#{root}/following/#{id}")
+      fetch: () => request('GET', "#{@url}/following")
+      'is': (id) => request('GET', "#{@url}/following/#{id}")
     @keys =
-      fetch: () -> request('GET', "#{root}/keys")
+      fetch: () => request('GET', "#{@url}/keys")
 
-    events = (onlyPublic) ->
+    @events = (onlyPublic) =>
       pub = ''
       pub = '/public' if onlyPublic is true
-      request('GET', "#{root}/events#{pub}")
+      request('GET', "#{@url}/events#{pub}")
 
-    receivedEvents = (onlyPublic) ->
+    @receivedEvents = (onlyPublic) =>
       pub = ''
       pub = '/public' if onlyPublic is true
-      request('GET', "#{root}/received_events#{pub}")
+      request('GET', "#{@url}/received_events#{pub}")
 
 
 class Me
   constructor: (request) ->
-    root = '/user'
+    @url = '/user'
 
-    @fetch     = () -> request('GET', root)
-    @repos     = (config) -> request('GET', "#{root}/repos", config)
-    @orgs      = (config) -> request('GET', "#{root}/orgs")
-    @gists     = (config) -> request('GET', "#{root}/gists")
-    @followers = (config) -> request('GET', "#{root}/followers")
-    @following = new Isable(request, "#{root}/following")
-    @emails    = new Addable(request, "#{root}/emails")
-    @keys      = new Addable(request, "#{root}/keys")
-    @key = (id) ->
-      fetch: () -> request('GET', "#{root}/keys/#{id}")
+    @fetch     = () => request('GET', @url)
+    @repos     = (config) => request('GET', "#{@url}/repos", config)
+    @orgs      = (config) => request('GET', "#{@url}/orgs")
+    @gists     = (config) => request('GET', "#{@url}/gists")
+    @followers = (config) => request('GET', "#{@url}/followers")
+    @following = Isable(request, "#{@url}/following")
+    @emails    = Addable(request, "#{@url}/emails")
+    @keys      = Addable(request, "#{@url}/keys")
+    @key = (id) =>
+      fetch: () => request('GET', "#{@url}/keys/#{id}")
 
 
-class Team
-  constructor: (request, id) ->
-    root = "/teams/#{id}"
-
-    @fetch = () -> request('GET', root)
-    @update = (config) -> request('PATCH', root, config)
+class Team extends Base
+  _test: (obj) -> /\/teams\//.test(obj.url)
+  constructor: (request, json) ->
+    super
+    @update = (config) => request('PATCH', @url, config)
     # TODO: move remove out of here
-    @remove = () -> request('DELETE', root)
-    @members = new Isable(request, "#{root}/members")
+    @remove = () => request('DELETE', @url)
+    @members = Isable(request, "#{@url}/members")
     @repos =
-      fetch:  () -> request('GET', "#{root}/repos")
-      add:    (user, name) -> request('PUT', "#{root}/repos/#{user}/#{name}")
-      remove: (user, name) -> request('DELETE', "#{root}/repos/#{user}/#{name}")
+      fetch:  () => request('GET', "#{@url}/repos")
+      add:    (user, name) => request('PUT', "#{@url}/repos/#{user}/#{name}")
+      remove: (user, name) => request('DELETE', "#{@url}/repos/#{user}/#{name}")
 
 
-class Org
-  constructor: (request, id) ->
-    root = "/orgs/#{id}"
-
-    @fetch = () -> request('GET', root)
-    @update = (config) -> request('PATCH', root, config)
-    @teams = new Createable(request, "#{root}/teams")
-    @members = new Isable(request, "#{root}/members")
+class Org extends Base
+  _test: (obj) -> /\/orgs\//.test(obj.url)
+  constructor: (request, json) ->
+    super
+    @update = (config) => request('PATCH', @url, config)
+    @teams = Createable(request, "#{@url}/teams")
+    @members = Isable(request, "#{@url}/members")
     @repos =
-      fetch:  () -> request('GET', "#{root}/repos")
-      create: (name) -> request('POST', "#{root}/repos/#{name}")
+      fetch:  () => request('GET', "#{@url}/repos")
+      create: (name) => request('POST', "#{@url}/repos/#{name}")
 
 class Git
-  constructor: (request, user, name) ->
-    root = "/repos/#{user}/#{name}/git"
+  constructor: (request, root) ->
+    @url = "#{root}/git"
 
-    @commits = new Createable(request, "#{root}/git/commits")
+    @commits = Createable(request, "#{@url}/git/commits")
 
     @refs =
-      create: (config) -> request('POST', "#{root}/refs", config)
-      remove: (id) -> request('DELETE', "#{root}/refs/#{id}")
-    @ref = (id) ->
-      fetch: () -> request('GET', "#{root}/refs/#{id}")
+      create: (config) => request('POST', "#{@url}/refs", config)
+      remove: (id) => request('DELETE', "#{@url}/refs/#{id}")
+    @ref = (id) =>
+      fetch: () => request('GET', "#{@url}/refs/#{id}")
 
     @heads =
-      fetch: () -> request('GET', "#{root}/heads")
-    @head = (id) ->
-      update: (config) -> request('PATCH', "#{root}/heads/#{id}", config)
+      fetch: () => request('GET', "#{@url}/heads")
+    @head = (id) =>
+      update: (config) => request('PATCH', "#{@url}/heads/#{id}", config)
 
     @blobs =
-      create: (content, isBase64) ->
+      create: (content, isBase64) =>
         if typeof content is 'string'
           # Base64 encode the content if it is binary (isBase64)
           content = base64encode(content) if isBase64 is true
@@ -152,73 +155,76 @@ class Git
             content: content
             encoding: 'utf-8'
         content.encoding = 'base64' if isBase64 is true
-        request('POST', "#{root}/blobs", content)
-        # TODO: .then (val) -> val.sha
-    @blob = (id, isBase64) ->
+        request('POST', "#{@url}/blobs", content)
+        # TODO: .then (val) => val.sha
+    @blob = (id, isBase64) =>
       options =
         raw: true
         isBase64: isBase64 is true
-      fetch: () -> request('GET', "#{root}/blobs/#{id}", null, options)
+      fetch: () => request('GET', "#{@url}/blobs/#{id}", null, options)
 
     @trees =
-      create: (config) -> request('POST', "#{root}/trees", config)
-    @tree = (id) ->
-      fetch: () -> request('GET', "#{root}/trees/#{id}")
+      create: (config) => request('POST', "#{@url}/trees", config)
+    @tree = (id) =>
+      fetch: () => request('GET', "#{@url}/trees/#{id}")
 
 
-class Repo
-  constructor: (request, user, name) ->
-    root = "/repos/#{user}/#{name}"
+class Repo extends Base
+  _test: (obj) -> /\/repos\//.test(obj.url)
+  constructor: (request, json) ->
+    super
 
-    @git = new Git(request, user, name)
+    @git = new Git(request, @url)
 
-    @fetch = () -> request('GET', root)
-    @update = (config) -> request('PATCH', root, config)
+    @fetch = () => request('GET', @url)
+    @update = (config) => request('PATCH', @url, config)
     # TODO: move remove out of here
-    @remove = () -> request('DELETE', root)
-    @fork = (config) -> request('POST', "#{root}/forks", config)
+    @remove = () => request('DELETE', @url)
+    @fork = (config) => request('POST', "#{@url}/forks", config)
     @pullRequests =
-      create: (config) -> request('POST', "#{root}/pulls", config)
-    @events = () -> request('GET', "#{root}/events")
+      create: (config) => request('POST', "#{@url}/pulls", config)
+    @events = () => request('GET', "#{@url}/events")
     @issues =
-      events: () -> request('GET', "#{root}/issues/events")
-    # Network is slightly different because its root is not `/repos/`
+      events: () => request('GET', "#{@url}/issues/events")
+    # Network is slightly different because its @url is not `/repos/`
     @network =
-      events: () -> request('GET', "/networks/#{user}/#{name}/events")
-    @notifications = (config) -> request('GET', "#{root}/notifications", config)
+      events: () => request('GET', "/networks/#{@owner.login}/#{@name}/events")
+    @notifications = (config) => request('GET', "#{@url}/notifications", config)
 
-    @collaborators = new Isable(request, "#{root}/collaborators")
+    @collaborators = Isable(request, "#{@url}/collaborators")
 
-    @hooks = new CreateRemovable(request, "#{root}/hooks")
-    @hook = (id) ->
-      fetch:  () -> request('GET', "#{root}/hooks/#{id}")
-      test:   () -> request('POST', "#{root}/hooks/#{id}/tests")
-      update: (config) -> request('PATCH', "#{root}/hooks/#{id}", config)
+    @hooks = CreateRemovable(request, "#{@url}/hooks")
+    @hook = (id) =>
+      fetch:  () => request('GET', "#{@url}/hooks/#{id}")
+      test:   () => request('POST', "#{@url}/hooks/#{id}/tests")
+      update: (config) => request('PATCH', "#{@url}/hooks/#{id}", config)
 
-    @contents = (path, sha) ->
-      fetch: () ->
+    @contents = (path, sha) =>
+      fetch: () =>
         queryString = toQueryString({ref:sha})
-        request('GET', "#{root}/contents/#{path}#{queryString}", null, {raw:true})
-      remove: (config) ->
+        request('GET', "#{@url}/contents/#{path}#{queryString}", null, {raw:true})
+      remove: (config) =>
         throw new Error('BUG: message is required') unless config.message
         config.sha = sha
-        request('DELETE', "#{root}/contents/#{path}", config)
+        request('DELETE', "#{@url}/contents/#{path}", config)
 
-    @languages = () -> request('GET', "#{root}/languages")
-    @releases = () -> request('GET', "#{root}/releases")
+    @languages = () => request('GET', "#{@url}/languages")
+    @releases = () => request('GET', "#{@url}/releases")
 
 
 
-class Gist
-  constructor: (request, id) ->
-    root = "/gists/#{id}"
+class Gist extends Base
+  _test: (obj) -> /\/gists\//.test(obj.url)
+  constructor: (request, json) ->
+    super
+    @fetch = () -> request('GET', @url)
+    @update = (config) -> request('PATCH', @url, config)
+    @remove = () -> request('DELETE', @url)
+    @fork = () -> request('POST', "#{@url}/forks")
+    @starred = Toggle(request, "#{@url}/star")
 
-    @fetch = () -> request('GET', root)
-    @update = (config) -> request('PATCH', root, config)
-    @remove = () -> request('DELETE', root)
-    @fork = () -> request('POST', "#{root}/forks")
-    @star = new Toggle(request, "#{root}/star")
 
+TESTABLE_TYPES = [User, Team, Org, Repo, Gist]
 
 
 # Combine all the classes into one client
@@ -239,11 +245,11 @@ octokitClient = (request) ->
     users:  (config) -> request('GET', '/search/users', config)
 
   me: new Me(request)
-  user: (id) -> new User(request, id)
-  team: (id) -> new Team(request, id)
-  org:  (id) -> new Org(request, id)
-  repo: (user, name) -> new Repo(request, user, name)
-  gist: (id) -> new Gist(request, id)
+  user: (id) -> request('GET', "/users/#{id}")
+  team: (id) -> request('GET', "/teams/#{id}")
+  org:  (id) -> request('GET', "/orgs/#{id}")
+  repo: (user, name) -> request('GET', "/repos/#{user}/#{name}")
+  gist: (id) -> request('GET', "/gists/#{id}")
   gists:
     fetch: () -> request('GET', '/gists')
     create: (options) -> request('POST', '/gists', options)
@@ -498,6 +504,9 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
         acc = {}
         for key, value of orig
           urlReplacer(acc, key, value)
+
+        for Type in TESTABLE_TYPES
+          return new Type(request, acc) if Type::_test(acc)
         acc
 
       arrayReplacer = (orig) ->
