@@ -1,3 +1,21 @@
+# from https://github.com/atom/underscore-plus
+camelize = (string) ->
+  if string
+    string.replace /[_-]+(\w)/g, (m) -> m[1].toUpperCase()
+  else
+    ''
+
+dasherize = (string) ->
+  return '' unless string
+
+  string = string[0].toLowerCase() + string[1..]
+  string.replace /([A-Z])|(_)/g, (m, letter) ->
+    if letter
+      "-#{letter.toLowerCase()}"
+    else
+      '-'
+
+
 # Utility classes for various containerish calls:
 # like `following`, `members`, `collaborators`, `keys`, `emails`, `git.commits`, `stars`
 class Createable
@@ -186,8 +204,8 @@ class Repo
         config.sha = sha
         request('DELETE', "#{root}/contents/#{path}", config)
 
-    @languages = request('GET', "#{root}/languages")
-    @releases = request('GET', "#{root}/releases")
+    @languages = () -> request('GET', "#{root}/languages")
+    @releases = () -> request('GET', "#{root}/releases")
 
 
 
@@ -307,6 +325,10 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
       if 'PATCH' == method and clientOptions.usePostInsteadOfPatch
         method = 'POST'
 
+      # Only prefix the path when it does not begin with http.
+      # This is so pagination works (which provides absolute URLs).
+      path = "#{clientOptions.rootURL}#{path}" if not /^http/.test(path)
+
       # Support binary data by overriding the response mimeType
       mimeType = undefined
       mimeType = 'text/plain; charset=x-user-defined' if options.isBase64
@@ -345,7 +367,7 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
         ajaxConfig =
           # Be sure to **not** blow the cache with a random number
           # (GitHub will respond with 5xx or CORS errors)
-          url: clientOptions.rootURL + path
+          url: path
           type: method
           contentType: 'application/json'
           mimeType: mimeType
@@ -399,6 +421,19 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
 
             if jqXHR.responseText and 'json' == ajaxConfig.dataType
               data = JSON.parse(jqXHR.responseText)
+
+              # Only JSON responses have next/prev/first/last link headers
+              # Add them to data so the resolved value is iterable
+
+              # Parse the Link headers
+              # of the form `<http://a.com>; rel="next", <https://b.com?a=b&c=d>; rel="previous"`
+              links = jqXHR.getResponseHeader('Link')
+              for part in links?.split(',') or []
+                [discard, href, rel] = part.match(/<([^>]+)>;\ rel="([^"]+)"/)
+                # Add the pagination functions on the JSON since Promises resolve one value
+                # Name the functions `nextPage`, `previousPage`, `firstPage`, `lastPage`
+                data["#{rel}_page_url"] = href
+
             else
               data = jqXHR.responseText
 
@@ -447,7 +482,62 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
       # Return the promise
       return promise
 
-    return octokitClient(_request)
+
+    request = (method, path, data, options={raw:false, isBase64:false, isBoolean:false}) ->
+
+
+      replacer = (o) ->
+        if Array.isArray(o)
+          return arrayReplacer(o)
+        else if o == Object(o)
+          return objReplacer(o)
+        else
+          return o
+
+      objReplacer = (orig) ->
+        acc = {}
+        for key, value of orig
+          urlReplacer(acc, key, value)
+        acc
+
+      arrayReplacer = (orig) ->
+        arr = (replacer(item) for item in orig)
+
+      # Convert things that end in `_url` to methods which return a Promise
+      urlReplacer = (acc, key, value) ->
+        if /_url$/.test(key)
+          fn = () ->
+            # url can contain {name} or {/name} in the URL.
+            # for every arg passed in, replace {...} with that arg
+            # and remove the rest (they may or may not be optional)
+            i = 0
+            while m = /(\{[^\}]+\})/.exec(value)
+              # `match` is something like `{/foo}`
+              match = m[1]
+              if i++ < arguments.length
+                # replace it
+                param = arguments[i]
+                param = "/#{param}" if match[1] = '/'
+              else
+                # Discard the remaining optional params in the URL
+                param = ''
+              value = value.replace(match, param)
+
+            request('GET', value, null) # TODO: Heuristically set the isBoolean flag
+          fn.url = value
+          newKey = key.substring(0, key.length-'_url'.length)
+          acc[camelize(newKey)] = fn
+
+        else
+          acc[camelize(key)] = replacer(value)
+
+
+      return _request(arguments...)
+      .then (val) ->
+        return replacer(val) unless options.raw
+        return val
+
+    return octokitClient(request)
 
 
 
