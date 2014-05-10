@@ -19,7 +19,7 @@
     "bower": "~1.0",
     "es6-promise": "~0.1.1",
     "xmlhttprequest": "~1.6.0",
-    "coffee-script": "~1.7.1"
+    "coffee-script": "~1.6.3"
   },
   "devDependencies": {
     "docco": "~0.4.0",
