@@ -9,11 +9,6 @@
     fn.create = (config) -> request('POST', root, config)
     fn
 
-  CreateRemovable = (request, root) ->
-    fn = () -> request('GET', root)
-    fn.remove = (id) -> request('DELETE', "#{root}/#{id}")
-    fn.create = (config) -> request('POST', root, config)
-    fn
 
   Addable = (request, root) ->
     fn = () -> request('GET', root)
@@ -21,19 +16,13 @@
     fn.remove = (id) -> request('DELETE', "#{root}/#{id}", null, isBoolean:true)
     fn
 
-  Isable = (request, root) ->
-    fn = (id=null) ->
-      return request('GET', "#{root}/#{id}", null, isBoolean:true) if id
-      return request('GET', root)
+  Isable = (fn, request, root) ->
     fn.add    = (id) -> request('PUT', "#{root}/#{id}", null, isBoolean:true)
     fn.remove = (id) -> request('DELETE', "#{root}/#{id}", null, isBoolean:true)
-    fn
 
-  Toggle = (request, root) ->
-    fn = () -> request('GET', root, null, isBoolean:true)
+  Toggle = (fn, request, root) ->
     fn.add    = () -> request('PUT', root, null, isBoolean:true)
     fn.remove = () -> request('DELETE', root, null, isBoolean:true)
-    fn
 
 
 
@@ -85,7 +74,10 @@
       @orgs      = (config) => request('GET', "#{@url}/orgs")
       @gists     = (config) => request('GET', "#{@url}/gists")
       @followers = (config) => request('GET', "#{@url}/followers")
-      @following = Isable(request, "#{@url}/following")
+      @following = (id=null) =>
+        return request('GET', "#{@url}/#{id}", null, isBoolean:true) if id
+        return request('GET', @url)
+      Isable(@following, request, "#{@url}/following")
       @emails    = Addable(request, "#{@url}/emails")
       @keys      = Addable(request, "#{@url}/keys")
       @key = (id) =>
@@ -97,13 +89,12 @@
     constructor: (request, json) ->
       super
       @update = (config) => request('PATCH', @url, config)
-      # TODO: move remove out of here
       @remove = () => request('DELETE', @url)
-      @members = Isable(request, "#{@url}/members")
-      @repos =
-        fetch:  () => request('GET', "#{@url}/repos")
-        add:    (user, name) => request('PUT', "#{@url}/repos/#{user}/#{name}")
-        remove: (user, name) => request('DELETE', "#{@url}/repos/#{user}/#{name}")
+
+      Isable(@members, request, "#{@url}/members")
+
+      @repositories.add =    (user, name) => request('PUT', "#{@url}/repos/#{user}/#{name}")
+      @repositories.remove = (user, name) => request('DELETE', "#{@url}/repos/#{user}/#{name}")
 
 
   class Org extends Base
@@ -112,7 +103,7 @@
       super
       @update = (config) => request('PATCH', @url, config)
       @teams = Createable(request, "#{@url}/teams")
-      @members = Isable(request, "#{@url}/members")
+      Isable(@members, request, "#{@url}/members")
       @repos =
         fetch:  () => request('GET', "#{@url}/repos")
         create: (name) => request('POST', "#{@url}/repos/#{name}")
@@ -169,10 +160,8 @@
       @update = (config) => request('PATCH', @url, config)
       # TODO: move remove out of here
       @remove = () => request('DELETE', @url)
-      @fork = (config) => request('POST', "#{@url}/forks", config)
-      @pullRequests =
-        create: (config) => request('POST', "#{@url}/pulls", config)
-      @events = () => request('GET', "#{@url}/events")
+      @forks.create = (config) => request('POST', "#{@url}/forks", config)
+      @pulls.create = (config) => request('POST', "#{@url}/pulls", config)
       @issues =
         events: () => request('GET', "#{@url}/issues/events")
       # Network is slightly different because its @url is not `/repos/`
@@ -180,13 +169,12 @@
         events: () => request('GET', "/networks/#{@owner.login}/#{@name}/events")
       @notifications = (config) => request('GET', "#{@url}/notifications", config)
 
-      @collaborators = Isable(request, "#{@url}/collaborators")
+      Isable(@collaborators, request, "#{@url}/collaborators")
 
-      @hooks = CreateRemovable(request, "#{@url}/hooks")
-      @hook = (id) =>
-        fetch:  () => request('GET', "#{@url}/hooks/#{id}")
-        test:   () => request('POST', "#{@url}/hooks/#{id}/tests")
-        update: (config) => request('PATCH', "#{@url}/hooks/#{id}", config)
+      @hooks.create = (config) => request('POST', "#{@url}/hooks", config)
+      @hooks.remove = (id) => request('DELETE', "#{@url}/hooks/#{id}")
+      @hooks.test   = (id) => request('POST', "#{@url}/hooks/#{id}/tests")
+      @hooks.update = (id, config) => request('PATCH', "#{@url}/hooks/#{id}", config)
 
       @contents = (path, sha) =>
         fetch: () =>
@@ -206,12 +194,15 @@
     _test: (obj) -> /\/gists\//.test(obj.url)
     constructor: (request, json) ->
       super
-      @fetch = () -> request('GET', @url)
-      @update = (config) -> request('PATCH', @url, config)
-      @remove = () -> request('DELETE', @url)
-      @fork = () -> request('POST', "#{@url}/forks")
-      @starred = Toggle(request, "#{@url}/star")
+      @fetch  = () => request('GET', @url)
+      @update = (config) => request('PATCH', @url, config)
+      @remove = () => request('DELETE', @url)
 
+      @forks.create = () => request('POST', "#{@url}/forks")
+
+      @starred = () => request('GET', "#{@url}/star", null, isBoolean:true)
+      @starred.add    = () => request('PUT', "#{@url}/star", null, isBoolean:true)
+      @starred.remove = () => request('DELETE', "#{@url}/star", null, isBoolean:true)
 
 
   types = {User, Me, Team, Org, Git, Repo, Gist}

@@ -3,11 +3,25 @@
   './replacer'
   './request'
   './types'
-], (Replacer, RequestTemplate, {Me}) ->
+  './helper-promise'
+], (Replacer, Request, {Me}, {newPromise, allPromises}) ->
 
   # Combine all the classes into one client
 
-  octokitClient = (request) ->
+  Octokit = (clientOptions={}) ->
+
+    # For each request, convert the JSON into Objects
+    _request = Request(clientOptions)
+
+    request = (method, path, data, options={raw:false, isBase64:false, isBoolean:false}) ->
+
+      replacer = new Replacer(request)
+
+      return _request(arguments...)
+      .then (val) ->
+        return val if options.raw
+        return replacer.replace(val)
+
 
     global:
       zen: () -> request('GET', '/zen', null, raw:true)
@@ -33,45 +47,6 @@
       create: (options) -> request('POST', '/gists', options)
       remove: (id) -> request('DELETE', "/gists/#{id}")
 
-
-
-  # # Create a Client Constructor
-  # These args will vary depending on if it is used in NodeJS or in the browser
-  # and which promise library is used.
-
-  makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent) =>
-
-    Request = RequestTemplate(newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
-
-    return (clientOptions={}) ->
-
-      # For each request, convert the JSON into Objects
-      _request = Request(clientOptions)
-
-      request = (method, path, data, options={raw:false, isBase64:false, isBoolean:false}) ->
-
-        replacer = new Replacer(request)
-
-        return _request(arguments...)
-        .then (val) ->
-          return replacer.replace(val) unless options.raw
-          return val
-
-      return octokitClient(request)
-
-
-
-  # Use native promises if Harmony is on
-  Promise         = @Promise or require('es6-promise').Promise
-  XMLHttpRequest  = require('xmlhttprequest').XMLHttpRequest
-
-  newPromise = (fn) -> return new Promise(fn)
-  allPromises = (promises) -> return Promise.all(promises)
-  # Encode using native Base64
-  encode = (str) ->
-    buffer = new Buffer(str, 'binary')
-    return buffer.toString('base64')
-  Octokit = makeOctokit(newPromise, allPromises, XMLHttpRequest, encode, 'octokit') # `User-Agent` (for nodejs)
 
 
   module?.exports = Octokit
