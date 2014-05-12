@@ -54,6 +54,9 @@
         newKey = key.substring(0, key.length-'_url'.length)
         acc[plus.camelize(newKey)] = fn
 
+      else if /_at$/.test(key)
+        acc[plus.camelize(key)] = new Date(value)
+
       else
         acc[plus.camelize(key)] = @replace(value)
 
