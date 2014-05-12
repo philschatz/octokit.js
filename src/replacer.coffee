@@ -2,9 +2,9 @@
 @define 'octokit/replacer', [
   'underscore-plus'
   './types'
-], (plus, {User, Team, Org, Repo, Gist}) ->
+], (plus, types) ->
 
-  TESTABLE_TYPES = [User, Team, Org, Repo, Gist]
+  TESTABLE_TYPES = (val for key, val of types)
 
   class Replacer
     constructor: (@_request) ->

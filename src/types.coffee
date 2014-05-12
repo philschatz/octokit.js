@@ -17,10 +17,12 @@
     fn
 
   Isable = (fn, request, root) ->
+    throw new Error("BUG: Missing function for #{root}") if not fn
     fn.add    = (id) -> request('PUT', "#{root}/#{id}", null, isBoolean:true)
     fn.remove = (id) -> request('DELETE', "#{root}/#{id}", null, isBoolean:true)
 
   Toggle = (fn, request, root) ->
+    throw new Error("BUG: Missing function for #{root}") if not fn
     fn.add    = () -> request('PUT', root, null, isBoolean:true)
     fn.remove = () -> request('DELETE', root, null, isBoolean:true)
 
@@ -66,6 +68,7 @@
 
 
   class Me
+    _test: () -> false
     constructor: (request) ->
       @url = '/user'
 
@@ -83,6 +86,7 @@
       @key = (id) =>
         fetch: () => request('GET', "#{@url}/keys/#{id}")
 
+      @issues = (config) => request('GET', "#{@url}/issues", config)
 
   class Team extends Base
     _test: (obj) -> /\/teams\//.test(obj.url)
@@ -108,8 +112,11 @@
         fetch:  () => request('GET', "#{@url}/repos")
         create: (name) => request('POST', "#{@url}/repos/#{name}")
 
+      @issues = (config) => request('GET', "#{@url}/issues", config)
+
 
   class Git
+    _test: () -> false
     constructor: (request, root) ->
       @url = "#{root}/git"
 
@@ -150,7 +157,7 @@
 
 
   class Repo extends Base
-    _test: (obj) -> /\/repos\//.test(obj.url)
+    _test: (obj) -> /\/repos\/[^\/]+\/[^\/]+$/.test(obj.url)
     constructor: (request, json) ->
       super
 
@@ -160,10 +167,18 @@
       @update = (config) => request('PATCH', @url, config)
       # TODO: move remove out of here
       @remove = () => request('DELETE', @url)
+      @forks = () => request('GET', "#{@url}/forks")
       @forks.create = (config) => request('POST', "#{@url}/forks", config)
+
       @pulls.create = (config) => request('POST', "#{@url}/pulls", config)
-      @issues =
-        events: () => request('GET', "#{@url}/issues/events")
+      @issues = (config) =>
+        if typeof config is 'number'
+          return request('GET', "#{@url}/issues/#{config}")
+        request('GET', "#{@url}/issues", config)
+      @issues.events = () => request('GET', "#{@url}/issues/events")
+      @issues.create = (config) => request('POST', "#{@url}/issues", config)
+      @issues.update = (id, config) => request('PATCH', "#{@url}/issues/#{id}", config)
+
       # Network is slightly different because its @url is not `/repos/`
       @network =
         events: () => request('GET', "/networks/#{@owner.login}/#{@name}/events")
@@ -205,7 +220,17 @@
       @starred.remove = () => request('DELETE', "#{@url}/star", null, isBoolean:true)
 
 
-  types = {User, Me, Team, Org, Git, Repo, Gist}
+  class Issue extends Base
+    _test: (obj) -> /\/repos\/[^\/]+\/[^\/]+\/issues\/[^\/]+$/.test(obj.url) or /\/repos\/[^\/]+\/[^\/]+\/pulls\/[^\/]+$/.test(obj.url)
+    constructor: (request, json) ->
+      super
+      @update = (config) => request('PATCH', @url, config)
+      @comments = Createable(request, "#{@url}/comments")
+      @comments.update = (id, config) => request('PATCH', "#{@url}/comments/#{id}", config)
+      @comments.remove = (id) => request('DELETE', "#{@url}/comments/#{id}")
+
+
+  types = {User, Me, Team, Org, Git, Repo, Gist, Issue}
 
   module?.exports = types
   return types

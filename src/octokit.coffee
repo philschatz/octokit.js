@@ -47,6 +47,8 @@
       create: (options) -> request('POST', '/gists', options)
       remove: (id) -> request('DELETE', "/gists/#{id}")
 
+    issues: (config) -> request('GET', '/issues', config)
+
 
 
   module?.exports = Octokit
