@@ -18,10 +18,10 @@
     "grunt": "~0.4.2",
     "bower": "~1.0",
     "es6-promise": "~0.1.1",
-    "xmlhttprequest": "~1.6.0"
+    "xmlhttprequest": "~1.6.0",
+    "coffee-script": "~1.6.3"
   },
   "devDependencies": {
-    "coffee-script": "~1.6.3",
     "docco": "~0.4.0",
     "grunt-coffeelint": "~0.0.7",
     "grunt-bump": "~0.0.10",
