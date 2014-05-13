@@ -22,6 +22,19 @@ define 'octokit', [
         return val if options.raw
         return replacer.replace(val)
 
+    # Converts a dictionary to a query string.
+    # Internal helper method
+    toQueryString = (options) ->
+
+      # Returns '' if `options` is empty so this string can always be appended to a URL
+      return '' if not options or options is {}
+
+      params = []
+      for key, value of options or {}
+        params.push "#{key}=#{encodeURIComponent(value)}"
+      return "?#{params.join('&')}"
+
+
 
     global:
       zen: () -> request('GET', '/zen', null, raw:true)
@@ -31,10 +44,10 @@ define 'octokit', [
       notifications: (config) -> request('GET', '/notifications', config)
 
     search:
-      repos:  (config) -> request('GET', '/search/repositories', config)
-      code:   (config) -> request('GET', '/search/code', config)
-      issues: (config) -> request('GET', '/search/issues', config)
-      users:  (config) -> request('GET', '/search/users', config)
+      repos:  (config) -> request('GET', "/search/repositories#{toQueryString(config)}")
+      code:   (config) -> request('GET', "/search/code#{toQueryString(config)}")
+      issues: (config) -> request('GET', "/search/issues#{toQueryString(config)}")
+      users:  (config) -> request('GET', "/search/users#{toQueryString(config)}")
 
     me: new Me(request)
     user: (id) -> request('GET', "/users/#{id}")
