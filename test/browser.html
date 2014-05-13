@@ -1,0 +1,32 @@
+<html>
+<body>
+  <script src="../bower_components/requirejs/require.js"></script>
+  <script>
+
+require.config({
+    // baseUrl: './src',
+    paths: {
+      'underscore-plus' : '../node_modules/underscore-plus/lib/underscore-plus',
+      'underscore'      : '../bower_components/underscore/dist/underscore',
+      'octokit'         : '../src/octokit',
+      'octokit-part'    : '../src',
+      'cs'              : '../bower_components/require-cs/cs',
+      'coffee-script'   : '../bower_components/coffee-script/extras/coffee-script'
+    }
+
+});
+
+require(['cs!octokit'], function(Octokit) {
+
+  var o = new Octokit();
+
+  o.repo('philschatz', 'octokit.js')
+  .then(function(repo) {
+    console.log('REPO');
+    console.log(repo);
+  })
+
+  </script>
+
+</body>
+</html>

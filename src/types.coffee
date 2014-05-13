@@ -1,5 +1,5 @@
-@define ?= (name, deps, cb) -> cb (require(dep) for dep in deps)...
-@define 'octokit/types', [], () ->
+define = window?.define or (name, deps, cb) -> cb (require(dep.replace('cs!octokit-part/', './')) for dep in deps)...
+define 'octokit-part/types', [], () ->
 
 
   # Utility classes for various containerish calls:
@@ -50,11 +50,10 @@
       @orgs       = (config) => request('GET', "#{@url}/orgs")
       @gists      = (config) => request('GET', "#{@url}/gists")
       @followers  = () => request('GET', "#{@url}/followers")
-      @following =
-        fetch: () => request('GET', "#{@url}/following")
-        'is': (id) => request('GET', "#{@url}/following/#{id}")
-      @keys =
-        fetch: () => request('GET', "#{@url}/keys")
+      @following = (id=null) =>
+        return request('GET', "#{@url}/#{id}", null, isBoolean:true) if id
+        return request('GET', @url)
+      @keys = () => request('GET', "#{@url}/keys")
 
       @events = (onlyPublic) =>
         pub = ''
@@ -67,19 +66,11 @@
         request('GET', "#{@url}/received_events#{pub}")
 
 
-  class Me
+  class Me extends User
     _test: () -> false
     constructor: (request) ->
-      @url = '/user'
+      super(request, {url:'/user'})
 
-      @fetch     = () => request('GET', @url)
-      @repos     = (config) => request('GET', "#{@url}/repos", config)
-      @orgs      = (config) => request('GET', "#{@url}/orgs")
-      @gists     = (config) => request('GET', "#{@url}/gists")
-      @followers = (config) => request('GET', "#{@url}/followers")
-      @following = (id=null) =>
-        return request('GET', "#{@url}/#{id}", null, isBoolean:true) if id
-        return request('GET', @url)
       Isable(@following, request, "#{@url}/following")
       @emails    = Addable(request, "#{@url}/emails")
       @keys      = Addable(request, "#{@url}/keys")

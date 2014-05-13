@@ -1,5 +1,5 @@
 chai      = require('chai')
-Octokit   = require('../octokit').new
+Octokit   = require('../src/octokit')
 makeTests = require('./common').makeTests
 
 assert = chai.assert

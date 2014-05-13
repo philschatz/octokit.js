@@ -1,11 +1,12 @@
-@define ?= (name, deps, cb) -> cb (require(dep) for dep in deps)...
-@define 'octokit/request', [
-  'xmlhttprequest'
-  './helper-promise'
-  './helper-base64'
-], (xmlhttprequest, {newPromise, allPromises}, base64encode) ->
+define = window?.define or (name, deps, cb) -> cb (require(dep.replace('cs!octokit-part/', './')) for dep in deps)...
+define 'octokit-part/request', [
+  'cs!octokit-part/helper-promise'
+  'cs!octokit-part/helper-base64'
+], (
+  {newPromise, allPromises}, base64encode) ->
 
-  XMLHttpRequest = xmlhttprequest.XMLHttpRequest
+  # Use the browser XMLHttpRequest if it exists. If not, then this is NodeJS
+  XMLHttpRequest = window?.XMLHttpRequest or require('xmlhttprequest').XMLHttpRequest
 
   userAgent = 'octokit' if module?
 

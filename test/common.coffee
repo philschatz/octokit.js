@@ -62,29 +62,46 @@ makeTests = (assert, expect, btoa, Octokit) ->
 
     STATE = {}
 
-    itIsOk = (obj, funcName) ->
-      it "##{funcName}()", (done) ->
-        helper1 done, STATE[obj][funcName](), (val) ->
+    itIsOk = (obj, funcNames) ->
+      it "##{funcNames}()", (done) ->
+        names = funcNames.split('.')
+        context = STATE[obj]
+        for field in names
+          context = context[field]
+        helper1 done, context(), (val) ->
           expect(val).to.be.ok
 
     before () ->
-      options =
-        token: TOKEN
-        # PhantomJS does not support the `PATCH` verb yet.
-        # See https://github.com/ariya/phantomjs/issues/11384 for updates
-        usePostInsteadOfPatch:true
+      # options =
+      #   token: TOKEN
+      #   # PhantomJS does not support the `PATCH` verb yet.
+      #   # See https://github.com/ariya/phantomjs/issues/11384 for updates
+      #   usePostInsteadOfPatch:true
+
+      options = {}
 
       options.useETags = false if IS_NODE
 
       STATE[GH] = new Octokit(options)
-      STATE[USER] = STATE[GH].getUser()
+      STATE[USER] = STATE[GH].me
 
-    itIsOk(GH, 'getZen')
-    itIsOk(GH, 'getAllUsers')
-    #(GH, 'getOrgRepos(orgName, type='all')')
-    itIsOk(GH, 'getPublicGists')
-    itIsOk(GH, 'getPublicEvents')
-    #(GH, 'onRateLimitChanged(listener)')
+    itIsOk(GH, 'global.zen')
+    itIsOk(GH, 'global.users')
+    itIsOk(GH, 'global.gists')
+    itIsOk(GH, 'global.events')
+    itIsOk(GH, 'global.notifications')
+
+    itIsOk(GH, 'search.repos', {q:'github'})
+    itIsOk(GH, 'search.code', {q:'github'})
+    itIsOk(GH, 'search.issues', {q:'github'})
+    itIsOk(GH, 'search.users', {q:'github'})
+
+    itIsOk(GH, 'user', REPO_USER)
+    itIsOk(GH, 'org', ORG_NAME)
+    itIsOk(GH, 'repo', REPO_USER, REPO_NAME)
+    itIsOk(GH, 'issues')
+    itIsOk(GH, 'gists')
+
 
     describe 'Repo:', () ->
       @timeout(LONG_TIMEOUT)

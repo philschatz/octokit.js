@@ -1,5 +1,5 @@
-@define ?= (name, deps, cb) -> cb (require(dep) for dep in deps)...
-@define 'octokit/helper-base64', [], () ->
+define = window?.define or (name, deps, cb) -> cb (require(dep.replace('cs!octokit-part/', './')) for dep in deps)...
+define 'octokit-part/helper-base64', [], () ->
 
   if module?.exports
     module.exports = (str) ->

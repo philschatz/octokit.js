@@ -1,8 +1,16 @@
-@define ?= (name, deps, cb) -> cb (require(dep) for dep in deps)...
-@define 'octokit/replacer', [
-  'underscore-plus'
-  './types'
-], (plus, types) ->
+define = window?.define or (name, deps, cb) -> cb (require(dep.replace('cs!octokit-part/', './')) for dep in deps)...
+define 'octokit-part/replacer', [
+  'cs!octokit-part/types'
+], (types) ->
+
+  # require('underscore-plus')
+  plus =
+    camelize: (string) ->
+      if string
+        string.replace /[_-]+(\w)/g, (m) -> m[1].toUpperCase()
+      else
+        ''
+
 
   TESTABLE_TYPES = (val for key, val of types)
 

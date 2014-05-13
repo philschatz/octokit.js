@@ -1,9 +1,9 @@
-@define ?= (name, deps, cb) -> cb (require(dep) for dep in deps)...
-@define 'octokit', [
-  './replacer'
-  './request'
-  './types'
-  './helper-promise'
+define = window?.define or (name, deps, cb) -> cb (require(dep.replace('cs!octokit-part/', './')) for dep in deps)...
+define 'octokit', [
+  'cs!octokit-part/replacer'
+  'cs!octokit-part/request'
+  'cs!octokit-part/types'
+  'cs!octokit-part/helper-promise'
 ], (Replacer, Request, {Me}, {newPromise, allPromises}) ->
 
   # Combine all the classes into one client
@@ -52,4 +52,5 @@
 
 
   module?.exports = Octokit
+  window?.Octokit = Octokit
   return Octokit
