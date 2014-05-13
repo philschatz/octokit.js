@@ -59,6 +59,7 @@ makeTests = (assert, expect, btoa, Octokit) ->
     USER = 'USER'
     BRANCH = 'BRANCH'
     ANOTHER_USER = 'ANOTHER_USER'
+    ORG = 'ORG'
 
     STATE = {}
 
@@ -187,6 +188,19 @@ makeTests = (assert, expect, btoa, Octokit) ->
       itIsArray(USER, 'keys')
       itIsArray(USER, 'events')
       itIsArray(USER, 'receivedEvents')
+
+
+    describe '.org(ORG_NAME)', () ->
+
+      before (done) ->
+        STATE[GH].org(ORG_NAME)
+        .then (v) ->
+          STATE[ORG] = v
+          done()
+
+      itIsArray(ORG, 'members')
+      itIsArray(ORG, 'repos')
+
 
     #   describe 'Initially:', () ->
     #     it 'has one commit', (done) ->

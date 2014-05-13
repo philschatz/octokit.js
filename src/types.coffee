@@ -99,9 +99,8 @@ define 'octokit-part/types', [], () ->
       @update = (config) => request('PATCH', @url, config)
       @teams = Createable(request, "#{@url}/teams")
       Isable(@members, request, "#{@url}/members")
-      @repos =
-        fetch:  () => request('GET', "#{@url}/repos")
-        create: (name) => request('POST', "#{@url}/repos/#{name}")
+      @repos = () => request('GET', "#{@url}/repos")
+      @repos.create = (name) => request('POST', "#{@url}/repos/#{name}")
 
       @issues = (config) => request('GET', "#{@url}/issues", config)
 
