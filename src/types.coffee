@@ -175,6 +175,9 @@ define 'octokit-part/types', [], () ->
         events: () => request('GET', "/networks/#{@owner.login}/#{@name}/events")
       @notifications = (config) => request('GET', "#{@url}/notifications", config)
 
+      @collaborators = (id) =>
+        return request('GET', "#{@url}/collaborators/#{id}", null, isBoolean:true) if id
+        return request('GET', "#{@url}/collaborators")
       Isable(@collaborators, request, "#{@url}/collaborators")
 
       @hooks.create = (config) => request('POST', "#{@url}/hooks", config)
@@ -185,7 +188,7 @@ define 'octokit-part/types', [], () ->
       @contents = (path, sha) =>
         fetch: () =>
           queryString = toQueryString({ref:sha})
-          request('GET', "#{@url}/contents/#{path}#{queryString}", null, {raw:true})
+          request('GET', "#{@url}/contents/#{path}#{queryString}", null, raw:true)
         remove: (config) =>
           throw new Error('BUG: message is required') unless config.message
           config.sha = sha
