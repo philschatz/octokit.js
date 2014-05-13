@@ -62,14 +62,37 @@ makeTests = (assert, expect, btoa, Octokit) ->
 
     STATE = {}
 
+    stringifyAry = (args...) ->
+      return '' if not args.length
+      arr = (JSON.stringify(arg) for arg in args)
+      return arr.join(', ')
+
     itIsOk = (obj, funcNames, args...) ->
-      it "##{funcNames}()", (done) ->
+      it ".#{funcNames}(#{stringifyAry(args...)})", (done) ->
         names = funcNames.split('.')
         context = STATE[obj]
         for field in names
           context = context[field]
         helper1 done, context(args...), (val) ->
           expect(val).to.be.ok
+
+    itIsArray = (obj, funcNames, args...) ->
+      it ".#{funcNames}(#{stringifyAry(args...)}) yields Array", (done) ->
+        names = funcNames.split('.')
+        context = STATE[obj]
+        for field in names
+          context = context[field]
+        helper1 done, context(args...), (val) ->
+          expect(val).to.be.an.array
+
+    itIsFalse = (obj, funcNames, args...) ->
+      it ".#{funcNames}(#{stringifyAry(args...)}) yields false", (done) ->
+        names = funcNames.split('.')
+        context = STATE[obj]
+        for field in names
+          context = context[field]
+        helper1 done, context(args...), (val) ->
+          expect(val).to.be.false
 
     before () ->
       options =
@@ -105,8 +128,7 @@ makeTests = (assert, expect, btoa, Octokit) ->
         expect(repo).to.be.ok
 
 
-    describe 'Repo:', () ->
-      @timeout(LONG_TIMEOUT)
+    describe '.repo(REPO_USER, REPO_NAME)', () ->
 
       before (done) ->
         STATE[GH].repo(REPO_USER, REPO_NAME)
@@ -115,36 +137,56 @@ makeTests = (assert, expect, btoa, Octokit) ->
           done()
 
       describe 'Accessors for methods generated from URL patterns', () ->
-        itIsOk(REPO, 'collaborators')
-        itIsOk(REPO, 'hooks')
-        itIsOk(REPO, 'assignees')
-        itIsOk(REPO, 'branches')
-        itIsOk(REPO, 'contributors')
-        itIsOk(REPO, 'subscribers')
-        itIsOk(REPO, 'subscription')
-        itIsOk(REPO, 'comments')
-        itIsOk(REPO, 'downloads')
-        itIsOk(REPO, 'milestones')
-        itIsOk(REPO, 'labels')
+        @timeout(LONG_TIMEOUT)
+        itIsArray(REPO, 'collaborators')
+        itIsArray(REPO, 'hooks')
+        itIsArray(REPO, 'assignees')
+        itIsArray(REPO, 'branches')
+        itIsArray(REPO, 'contributors')
+        itIsArray(REPO, 'subscribers')
+        itIsArray(REPO, 'subscription')
+        itIsArray(REPO, 'comments')
+        itIsArray(REPO, 'downloads')
+        itIsArray(REPO, 'milestones')
+        itIsArray(REPO, 'labels')
 
 
-    describe 'Collaborator changes', () ->
-      it 'gets a list of collaborators', (done) ->
-        trapFail(STATE[REPO].collaborators())
-        .then (v) -> expect(v).to.be.an.array; done()
+      describe 'Collaborator changes', () ->
+        it 'gets a list of collaborators', (done) ->
+          trapFail(STATE[REPO].collaborators())
+          .then (v) -> expect(v).to.be.an.array; done()
 
-      it 'tests membership', (done) ->
-        trapFail(STATE[REPO].collaborators('defunkt'))
-        .then (v) -> expect(v).to.be.false; done()
+        it 'tests membership', (done) ->
+          trapFail(STATE[REPO].collaborators(REPO_USER))
+          .then (v) -> expect(v).to.be.true; done()
 
-      it 'adds and removes a collaborator', (done) ->
-        trapFail(STATE[REPO].collaborators.add(OTHER_USERNAME))
-        .then (v) ->
-          expect(v).to.be.ok
-          trapFail(STATE[REPO].collaborators.remove(OTHER_USERNAME))
+        it 'adds and removes a collaborator', (done) ->
+          trapFail(STATE[REPO].collaborators.add(OTHER_USERNAME))
           .then (v) ->
-            expect(v).to.be.true
-            done()
+            expect(v).to.be.ok
+            trapFail(STATE[REPO].collaborators.remove(OTHER_USERNAME))
+            .then (v) ->
+              expect(v).to.be.true
+              done()
+
+
+    describe '.user(USERNAME)', () ->
+
+      before (done) ->
+        STATE[GH].user(USERNAME)
+        .then (v) ->
+          STATE[USER] = v
+          done()
+
+      itIsArray(USER, 'repos')
+      itIsArray(USER, 'orgs')
+      itIsArray(USER, 'gists')
+      itIsArray(USER, 'followers')
+      itIsArray(USER, 'following')
+      itIsFalse(USER, 'following', 'defunkt')
+      itIsArray(USER, 'keys')
+      itIsArray(USER, 'events')
+      itIsArray(USER, 'receivedEvents')
 
     #   describe 'Initially:', () ->
     #     it 'has one commit', (done) ->

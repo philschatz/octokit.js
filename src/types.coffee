@@ -161,7 +161,7 @@ define 'octokit-part/types', [], () ->
       @forks = () => request('GET', "#{@url}/forks")
       @forks.create = (config) => request('POST', "#{@url}/forks", config)
 
-      @pulls.create = (config) => request('POST', "#{@url}/pulls", config)
+      @pulls?.create = (config) => request('POST', "#{@url}/pulls", config)
       @issues = (config) =>
         if typeof config is 'number'
           return request('GET', "#{@url}/issues/#{config}")
@@ -175,15 +175,15 @@ define 'octokit-part/types', [], () ->
         events: () => request('GET', "/networks/#{@owner.login}/#{@name}/events")
       @notifications = (config) => request('GET', "#{@url}/notifications", config)
 
-      @collaborators = (id) =>
+      @collaborators = (id=null) =>
         return request('GET', "#{@url}/collaborators/#{id}", null, isBoolean:true) if id
         return request('GET', "#{@url}/collaborators")
       Isable(@collaborators, request, "#{@url}/collaborators")
 
-      @hooks.create = (config) => request('POST', "#{@url}/hooks", config)
-      @hooks.remove = (id) => request('DELETE', "#{@url}/hooks/#{id}")
-      @hooks.test   = (id) => request('POST', "#{@url}/hooks/#{id}/tests")
-      @hooks.update = (id, config) => request('PATCH', "#{@url}/hooks/#{id}", config)
+      @hooks?.create = (config) => request('POST', "#{@url}/hooks", config)
+      @hooks?.remove = (id) => request('DELETE', "#{@url}/hooks/#{id}")
+      @hooks?.test   = (id) => request('POST', "#{@url}/hooks/#{id}/tests")
+      @hooks?.update = (id, config) => request('PATCH', "#{@url}/hooks/#{id}", config)
 
       @contents = (path, sha) =>
         fetch: () =>
@@ -224,7 +224,12 @@ define 'octokit-part/types', [], () ->
       @comments.remove = (id) => request('DELETE', "#{@url}/comments/#{id}")
 
 
-  types = {User, Me, Team, Org, Git, Repo, Gist, Issue}
+  class Event extends Base
+    _test: (obj) -> obj.type in ['PushEvent', 'MemberEvent']
+    constructor: (request, json) ->
+      super
+
+  types = {User, Me, Team, Org, Git, Repo, Gist, Issue, Event}
 
   module?.exports = types
   return types
