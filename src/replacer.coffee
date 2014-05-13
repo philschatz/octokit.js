@@ -55,6 +55,8 @@ define 'octokit-part/replacer', [
             else
               # Discard the remaining optional params in the URL
               param = ''
+              if match[1] != '/'
+                throw new Error("BUG: Missing required parameter #{match}")
             value = value.replace(match, param)
 
           @_request('GET', value, null) # TODO: Heuristically set the isBoolean flag
