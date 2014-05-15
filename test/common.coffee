@@ -221,20 +221,16 @@ makeTests = (assert, expect, btoa, Octokit) ->
 
       describe 'Multistep operations', () ->
 
-        it '.starred.add(OWNER, REPO) and then .starred.is(OWNER, NAME)', (done) ->
+        it '.starred.add(OWNER, REPO), .starred.is(...), and then .starred.remove(...)', (done) ->
           trapFail(STATE[ME].starred.add(REPO_USER, REPO_NAME))
           .then () ->
             STATE[ME].starred.is(REPO_USER, REPO_NAME)
             .then (isStarred) ->
               expect(isStarred).to.be.true
-              done()
-
-              # Unstarring a repo requires additional privileges
-              #
-              # STATE[ME].starred.remove(REPO_USER, REPO_NAME)
-              # .then (v) ->
-              #   expect(v).to.be.true
-              #   done()
+              STATE[ME].starred.remove(REPO_USER, REPO_NAME)
+              .then (v) ->
+                expect(v).to.be.true
+                done()
 
 
     describe '.gist(GIST_ID)', () ->
