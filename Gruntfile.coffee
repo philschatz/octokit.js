@@ -102,9 +102,6 @@ module.exports = (grunt) ->
   # Travis CI
   # -----
   grunt.registerTask 'test', [
-    'coffeelint'
-    'clean'
-    'coffee'
     'mochaTest'
     #'blanket_mocha' NOTE: Uncomment once the `suiteURL` problem noted above is fixed
   ]
