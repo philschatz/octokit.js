@@ -239,6 +239,7 @@ define 'octokit-part/types', [
             children:
               'all': verb: 'GET'
               'one': verb: 'GET', urlArgs: ['commentId']
+              'update': verb: 'PATCH', urlArgs: ['commentId'], hasDataArg: true
 
       'notifications': verb: 'GET', url: 'notifications', hasDataArg: true
 

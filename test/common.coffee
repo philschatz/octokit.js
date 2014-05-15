@@ -318,6 +318,8 @@ makeTests = (assert, expect, btoa, Octokit) ->
       itIsOk(ISSUE, 'update', {title: 'New Title', state: 'closed'})
       itIsOk(ISSUE, 'comments.all')
       itIsOk(ISSUE, 'comments.create', {body: 'Test comment'})
+      # NOTE: Comment updating is awkward because it's on the repo, not a specific issue.
+      itIsOk(REPO, 'issues.comments.update', 43218269, {body: 'Test comment updated'})
 
 
 
