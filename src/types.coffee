@@ -66,6 +66,12 @@ define 'octokit-part/types', [], () ->
       'gists':      verb: 'GET', url: 'gists'
       'followers':  verb: 'GET', url: 'followers'
 
+      'starred':
+        verb: 'GET'
+        url: 'starred'
+        children:
+          'all': verb: 'GET'
+
       'following':
         url: 'following'
         children:
@@ -86,6 +92,14 @@ define 'octokit-part/types', [], () ->
       'repos':      verb: 'GET', url: 'repos', hasDataArg: true
       'orgs':       verb: 'GET', url: 'orgs'
       'followers':  verb: 'GET', url: 'followers'
+
+      'starred':
+        url: 'starred'
+        children:
+          'all':    verb: 'GET',    hasDataArg: true
+          'is':     verb: 'GET',    urlArgs: ['user', 'optionalname'], isBoolean: true
+          'add':    verb: 'PUT',    urlArgs: ['user', 'optionalname'], isBoolean: true
+          'remove': verb: 'DELETE', urlArgs: ['user', 'optionalname'], isBoolean: true
 
       # Specific to Authenticated user
       'following':
@@ -198,6 +212,7 @@ define 'octokit-part/types', [], () ->
 
       'languages':  verb: 'GET', url: 'languages'
       'releases':   verb: 'GET', url: 'releases'
+      'stargazers':   verb: 'GET', url: 'stargazers'
 
       'forks':
         url: 'forks'
@@ -309,11 +324,13 @@ define 'octokit-part/types', [], () ->
       'forks':
         url: 'forks'
         children:
+          # 'all':    verb: 'GET'
           'create': verb: 'POST', hasDataArg: true
 
       'starred':
         url: 'star'
         children:
+          # 'all':    verb: 'GET', hasQueryArg: true
           'is':     verb: 'GET', isBoolean: true
           'add':    verb: 'PUT', isBoolean: true
           'remove': verb: 'DELETE', isBoolean: true

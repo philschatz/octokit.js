@@ -51,7 +51,7 @@ makeTests = (assert, expect, btoa, Octokit) ->
     some arr, (entry) ->
       return entry[key] == value
 
-  describe 'Octokit', () ->
+  describe 'octo = new Octokit({token: ...})', () ->
     @timeout(LONG_TIMEOUT)
 
     GH = 'GH'
@@ -61,6 +61,7 @@ makeTests = (assert, expect, btoa, Octokit) ->
     BRANCH = 'BRANCH'
     ANOTHER_USER = 'ANOTHER_USER'
     ORG = 'ORG'
+    GIST = 'GIST'
 
     STATE = {}
 
@@ -108,26 +109,21 @@ makeTests = (assert, expect, btoa, Octokit) ->
       STATE[GH] = new Octokit(options)
 
     itIsOk(GH, 'global.zen')
-    itIsOk(GH, 'global.users')
-    itIsOk(GH, 'global.gists')
-    # itIsOk(GH, 'global.events')
-    # itIsOk(GH, 'global.notifications')
+    itIsArray(GH, 'global.users')
+    itIsArray(GH, 'global.gists')
+    # itIsArray(GH, 'global.events')
+    # itIsArray(GH, 'global.notifications')
 
-    itIsOk(GH, 'search.repos', {q:'github'})
-    # itIsOk(GH, 'search.code', {q:'github'})
-    itIsOk(GH, 'search.issues', {q:'github'})
-    itIsOk(GH, 'search.users', {q:'github'})
+    itIsArray(GH, 'search.repos', {q:'github'})
+    # itIsArray(GH, 'search.code', {q:'github'})
+    itIsArray(GH, 'search.issues', {q:'github'})
+    itIsArray(GH, 'search.users', {q:'github'})
 
     itIsOk(GH, 'user', REPO_USER)
     itIsOk(GH, 'org', ORG_NAME)
     itIsOk(GH, 'repo', REPO_USER, REPO_NAME)
-    itIsOk(GH, 'issues')
-    itIsOk(GH, 'gists.all')
-
-    it 'fetches a repo', () ->
-      trapFail(STATE[GH].repo(REPO_USER, REPO_NAME))
-      .then (repo) ->
-        expect(repo).to.be.ok
+    itIsArray(GH, 'issues')
+    itIsArray(GH, 'gists.all')
 
 
     describe '.repo(REPO_USER, REPO_NAME)', () ->
@@ -151,7 +147,7 @@ makeTests = (assert, expect, btoa, Octokit) ->
         itIsArray(REPO, 'downloads')
         itIsArray(REPO, 'milestones')
         itIsArray(REPO, 'labels')
-
+        # itIsArray(REPO, 'stargazers')
 
       describe 'Collaborator changes', () ->
         it 'gets a list of collaborators', (done) ->
@@ -219,6 +215,52 @@ makeTests = (assert, expect, btoa, Octokit) ->
       # itIsFalse(ME, 'keys.is', 'invalid-key')
 
       itIsArray(ME, 'issues')
+
+      # itIsArray(ME, 'starred.all') Not enough permission
+
+
+      describe 'Multistep operations', () ->
+
+        it '.starred.add(OWNER, REPO) and then .starred.is(OWNER, NAME)', (done) ->
+          trapFail(STATE[ME].starred.add(REPO_USER, REPO_NAME))
+          .then () ->
+            STATE[ME].starred.is(REPO_USER, REPO_NAME)
+            .then (isStarred) ->
+              expect(isStarred).to.be.true
+              done()
+
+              # Unstarring a repo requires additional privileges
+              #
+              # STATE[ME].starred.remove(REPO_USER, REPO_NAME)
+              # .then (v) ->
+              #   expect(v).to.be.true
+              #   done()
+
+
+    describe '.gist(GIST_ID)', () ->
+
+      before (done) ->
+
+        # Create a Test Gist for all the tests
+        config =
+          description: "Test Gist"
+          'public': false
+          files:
+            "hello.txt":
+              content: "Hello World"
+
+        STATE[GH].gists.create(config)
+        .then (gist) ->
+          STATE[GIST] = gist
+          done()
+
+      # itIsArray(GIST, 'forks.all')
+      it 'can be .starred.add() and .starred.remove()', (done) ->
+        STATE[GIST].starred.add()
+        .then () ->
+          STATE[GIST].starred.remove()
+          .then () ->
+            done()
 
 
     #   describe 'Initially:', () ->
