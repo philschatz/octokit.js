@@ -138,7 +138,7 @@ makeTests = (assert, expect, btoa, Octokit) ->
         @timeout(LONG_TIMEOUT)
         itIsArray(REPO, 'collaborators.all')
         itIsArray(REPO, 'hooks.all')
-        itIsArray(REPO, 'assignees')
+        itIsArray(REPO, 'assignees.all')
         itIsArray(REPO, 'branches')
         itIsArray(REPO, 'contributors')
         itIsArray(REPO, 'subscribers')

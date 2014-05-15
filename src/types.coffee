@@ -254,6 +254,12 @@ define 'octokit-part/types', [
             urlArgs: ['id']
             isBoolean: true
 
+      'assignees':
+        url: 'assignees'
+        children:
+          'all':  verb: 'GET'
+          'is':   verb: 'GET', urlArgs: ['userId'], isBoolean: true
+
       'hooks':
         url: 'hooks'
         children:
