@@ -1,48 +1,53 @@
 define = window?.define or (name, deps, cb) -> cb (require(dep.replace('cs!octokit-part/', './')) for dep in deps)...
-define 'octokit-part/types', [], () ->
+define 'octokit-part/types', [
+  'cs!octokit-part/helper-base64'
+], (base64encode) ->
 
 
   methodGenerator = (request, rootUrl, context, config) ->
     for name, methodConfig of config
       do (methodConfig) ->
-        {verb, url, urlSuffix, urlArgs, urlSeparator, hasQueryArg, hasDataArg, raw, isBase64, isBoolean, children} = methodConfig
-        url ?= ''
-        verb ?= 'NONE'
-        urlArgs ?= []
-        urlSeparator ?= '/'
-        urlSuffix ?= ''
-
-        options = {raw, isBase64, isBoolean}
-
-        if url and url[0] isnt '/'
-          url = "#{rootUrl}/#{url}"
+        if typeof methodConfig is 'function'
+          context[name] = methodConfig(request, rootUrl)
         else
-          url = rootUrl
+          {verb, url, urlSuffix, urlArgs, urlSeparator, hasQueryArg, hasDataArg, raw, isBase64, isBoolean, children} = methodConfig
+          url ?= ''
+          verb ?= 'NONE'
+          urlArgs ?= []
+          urlSeparator ?= '/'
+          urlSuffix ?= ''
 
-        url = "#{url}#{urlSuffix}"
+          options = {raw, isBase64, isBoolean}
 
-        myRoot = url
+          if url and url[0] isnt '/'
+            url = "#{rootUrl}/#{url}"
+          else
+            url = rootUrl
 
-        if verb is 'NONE'
-          context[name] = {}
-        else
-          context[name] = (args...) ->
-            myUrl = url
-            for argName, i in urlArgs
-              if args.length
-                myUrl += "#{urlSeparator}#{args.shift()}"
+          url = "#{url}#{urlSuffix}"
 
-            if hasQueryArg and args.length
-              myUrl += toQueryString(args.shift())
+          myRoot = url
 
-            data = null
-            if hasDataArg and args.length
-              data = args.shift()
+          if verb is 'NONE'
+            context[name] = {}
+          else
+            context[name] = (args...) ->
+              myUrl = url
+              for argName, i in urlArgs
+                if args.length
+                  myUrl += "#{urlSeparator}#{args.shift()}"
 
-            request(verb, myUrl, data, options)
+              if hasQueryArg and args.length
+                myUrl += toQueryString(args.shift())
 
-        # Recurse on children
-        methodGenerator(request, myRoot, context[name], methodConfig.children) if methodConfig.children
+              data = null
+              if hasDataArg and args.length
+                data = args.shift()
+
+              request(verb, myUrl, data, options)
+
+          # Recurse on children
+          methodGenerator(request, myRoot, context[name], methodConfig.children) if methodConfig.children
 
 
 
@@ -304,8 +309,8 @@ define 'octokit-part/types', [], () ->
                   request('POST', rootUrl, content)
                   # TODO: .then (val) => val.sha
               'one': (request, rootUrl) ->
-                (sha, isBinary) ->
-                  request 'GET', "#{rootUrl}/#{sha}", null, raw: true, isBinary: isBinary is true
+                (sha, isBase64) ->
+                  request 'GET', "#{rootUrl}/#{sha}", null, raw: true, isBase64: isBase64 is true
 
           'trees':
             url: 'trees'

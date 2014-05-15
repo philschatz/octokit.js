@@ -149,6 +149,35 @@ makeTests = (assert, expect, btoa, Octokit) ->
         itIsArray(REPO, 'labels')
         # itIsArray(REPO, 'stargazers')
 
+      describe '.git', () ->
+
+        it '.blobs.create("Hello")   and .blobs.one(sha)', (done) ->
+          STATE[REPO].git.blobs.create('Hello')
+          .then ({sha}) ->
+            expect(sha).to.be.ok
+            STATE[REPO].git.blobs.one(sha)
+            .then (v) ->
+              expect(v).to.equal('Hello')
+              done()
+
+        it '.blobs.create(..., true) and .blobs.one(..., true) (binary flag)', (done) ->
+          STATE[REPO].git.blobs.create('Hello', true)
+          .then ({sha}) ->
+            expect(sha).to.be.ok
+            STATE[REPO].git.blobs.one(sha, true)
+            .then (v) ->
+              expect(v).to.have.string('Hello')
+
+              done()
+              # Make sure the library does not just ignore the isBinary flag
+              # TODO: This is commented because caching is only based on the path, not the flags (or the verb)
+              # STATE[REPO].git.blobs.one(sha)
+              # .then (v) ->
+              #   expect(v).to.not.have.string('Hello')
+              #   done()
+
+
+
       describe 'Collaborator changes', () ->
         it 'gets a list of collaborators', (done) ->
           trapFail(STATE[REPO].collaborators.all())
