@@ -51,37 +51,42 @@ makeTests = (assert, expect, btoa, Octokit) ->
     some arr, (entry) ->
       return entry[key] == value
 
-  describe 'octo = new Octokit({token: ...})', () ->
+  GH = 'octo'
+  REPO = 'myRepo'
+  USER = 'someUser'
+  ME = 'myUser'
+  BRANCH = 'BRANCH'
+  ANOTHER_USER = 'ANOTHER_USER'
+  ORG = 'someOrg'
+  GIST = 'someGist'
+  ISSUE = 'someIssue'
+  COMMENT = 'someComment'
+
+  STATE = {}
+
+
+  describe "#{GH} = new Octokit({token: ...})", () ->
     @timeout(LONG_TIMEOUT)
-
-    GH = 'GH'
-    REPO = 'REPO'
-    USER = 'USER'
-    ME = 'ME'
-    BRANCH = 'BRANCH'
-    ANOTHER_USER = 'ANOTHER_USER'
-    ORG = 'ORG'
-    GIST = 'GIST'
-    ISSUE = 'ISSUE'
-
-    STATE = {}
 
     stringifyAry = (args...) ->
       return '' if not args.length
       arr = (JSON.stringify(arg) for arg in args)
       return arr.join(', ')
 
-    itIsOk = (obj, funcNames, args...) ->
-      it ".#{funcNames}(#{stringifyAry(args...)})", (done) ->
+    itIs = (obj, funcNames, args, cb) ->
+      it "#{obj}.#{funcNames}(#{stringifyAry(args...)})", (done) ->
         names = funcNames.split('.')
         context = STATE[obj]
         for field in names
           context = context[field]
-        helper1 done, context(args...), (val) ->
-          expect(val).to.be.ok
+        helper1 done, context(args...), cb
+
+
+    itIsOk = (obj, funcNames, args...) ->
+      itIs obj, funcNames, args, (val) -> expect(val).to.be.ok
 
     itIsArray = (obj, funcNames, args...) ->
-      it ".#{funcNames}(#{stringifyAry(args...)}) yields Array", (done) ->
+      it "#{obj}.#{funcNames}(#{stringifyAry(args...)}) yields Array", (done) ->
         names = funcNames.split('.')
         context = STATE[obj]
         for field in names
@@ -90,7 +95,7 @@ makeTests = (assert, expect, btoa, Octokit) ->
           expect(val).to.be.an.array
 
     itIsFalse = (obj, funcNames, args...) ->
-      it ".#{funcNames}(#{stringifyAry(args...)}) yields false", (done) ->
+      it "#{obj}.#{funcNames}(#{stringifyAry(args...)}) yields false", (done) ->
         names = funcNames.split('.')
         context = STATE[obj]
         for field in names
@@ -127,7 +132,7 @@ makeTests = (assert, expect, btoa, Octokit) ->
     itIsArray(GH, 'gists.all')
 
 
-    describe '.repo(REPO_USER, REPO_NAME)', () ->
+    describe "#{GH}.repo(OWNER, NAME).then (#{REPO}) -> ...", () ->
 
       before (done) ->
         STATE[GH].repo(REPO_USER, REPO_NAME)
@@ -135,29 +140,28 @@ makeTests = (assert, expect, btoa, Octokit) ->
           STATE[REPO] = repo
           done()
 
-      describe 'Accessors for methods generated from URL patterns', () ->
-        @timeout(LONG_TIMEOUT)
-        itIsArray(REPO, 'collaborators.all')
-        itIsArray(REPO, 'hooks.all')
-        itIsArray(REPO, 'assignees.all')
-        itIsArray(REPO, 'branches')
-        itIsArray(REPO, 'contributors')
-        itIsArray(REPO, 'subscribers')
-        itIsArray(REPO, 'subscription')
-        itIsArray(REPO, 'comments')
-        itIsArray(REPO, 'downloads')
-        itIsArray(REPO, 'milestones')
-        itIsArray(REPO, 'labels')
-        # itIsArray(REPO, 'stargazers')
-        itIsArray(REPO, 'issues.all')
-        itIsArray(REPO, 'issues.events')
-        itIsArray(REPO, 'issues.comments.all')
-        # itIsArray(REPO, 'issues.comments.one', commentId)
+      # Accessors for methods generated from URL patterns
+      itIsArray(REPO, 'collaborators.all')
+      itIsArray(REPO, 'hooks.all')
+      itIsArray(REPO, 'assignees.all')
+      itIsArray(REPO, 'branches')
+      itIsArray(REPO, 'contributors')
+      itIsArray(REPO, 'subscribers')
+      itIsArray(REPO, 'subscription')
+      itIsArray(REPO, 'comments')
+      itIsArray(REPO, 'downloads')
+      itIsArray(REPO, 'milestones')
+      itIsArray(REPO, 'labels')
+      # itIsArray(REPO, 'stargazers')
+      itIsArray(REPO, 'issues.all')
+      itIsArray(REPO, 'issues.events')
+      itIsArray(REPO, 'issues.comments.all')
+      # itIsArray(REPO, 'issues.comments.one', commentId)
 
-        itIsOk(REPO, 'issues.create', {title: 'Test Issue'})
-        itIsOk(REPO, 'issues.one', 1)
+      itIsOk(REPO, 'issues.create', {title: 'Test Issue'})
+      itIsOk(REPO, 'issues.one', 1)
 
-      describe '.git (Git Data)', () ->
+      describe "#{REPO}.git... (Git Data)", () ->
 
         itIsArray(REPO, 'git.refs.all')
         # itIsArray(REPO, 'git.refs.tags')    This repo does not have any tags: TODO: create a tag
@@ -215,7 +219,7 @@ makeTests = (assert, expect, btoa, Octokit) ->
               done()
 
 
-    describe '.user(USERNAME)', () ->
+    describe "#{GH}.user(USERNAME).then (#{USER}) -> ...", () ->
 
       before (done) ->
         STATE[GH].user(USERNAME)
@@ -234,7 +238,7 @@ makeTests = (assert, expect, btoa, Octokit) ->
       itIsArray(USER, 'receivedEvents')
 
 
-    describe '.org(ORG_NAME)', () ->
+    describe "#{GH}.org(ORG_NAME).then (#{ORG}) -> ...", () ->
 
       before (done) ->
         STATE[GH].org(ORG_NAME)
@@ -247,7 +251,7 @@ makeTests = (assert, expect, btoa, Octokit) ->
       itIsArray(ORG, 'issues')
 
 
-    describe '.me', () ->
+    describe "#{ME} = #{GH}.me (the authenticated user)", () ->
 
       before () ->
         STATE[ME] = STATE[GH].me
@@ -281,7 +285,7 @@ makeTests = (assert, expect, btoa, Octokit) ->
                 done()
 
 
-    describe '.gist(GIST_ID)', () ->
+    describe "#{GH}.gist(GIST_ID).then (#{GIST}) -> ...", () ->
 
       before (done) ->
 
@@ -316,11 +320,21 @@ makeTests = (assert, expect, btoa, Octokit) ->
           done()
 
       itIsOk(ISSUE, 'update', {title: 'New Title', state: 'closed'})
-      itIsOk(ISSUE, 'comments.all')
-      itIsOk(ISSUE, 'comments.create', {body: 'Test comment'})
-      # NOTE: Comment updating is awkward because it's on the repo, not a specific issue.
-      itIsOk(REPO, 'issues.comments.update', 43218269, {body: 'Test comment updated'})
 
+      describe 'Comment methods (Some are on the repo, issue, or comment)', () ->
+
+        itIsArray(ISSUE, 'comments.all')
+        itIsOk(ISSUE, 'comments.create', {body: 'Test comment'})
+        # NOTE: Comment updating is awkward because it's on the repo, not a specific issue.
+        # itIsOk(REPO, 'issues.comments.update', 43218269, {body: 'Test comment updated'})
+        itIsOk(REPO, 'issues.comments.one', 43218269)
+
+        it 'comment.issue()', (done) ->
+          trapFail(STATE[REPO].issues.comments.one(43218269))
+          .then (comment) ->
+            comment.issue()
+            .then (v) ->
+              done()
 
 
 

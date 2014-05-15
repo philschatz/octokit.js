@@ -237,9 +237,10 @@ define 'octokit-part/types', [
           'comments':
             url: 'comments'
             children:
-              'all': verb: 'GET'
+              'all': verb: 'GET', hasDataArg: true
               'one': verb: 'GET', urlArgs: ['commentId']
-              'update': verb: 'PATCH', urlArgs: ['commentId'], hasDataArg: true
+              # TODO: Decide if update/remove should be only on the object or on the parent as well
+              # 'update': verb: 'PATCH', urlArgs: ['commentId'], hasDataArg: true
 
       'notifications': verb: 'GET', url: 'notifications', hasDataArg: true
 
@@ -299,8 +300,17 @@ define 'octokit-part/types', [
               'remove': verb: 'DELETE', urlArgs: ['refId']
               'update': verb: 'PATCH',  urlArgs: ['refId']
 
-              'tags':   verb: 'GET', url: 'tags'
-              'heads':  verb: 'GET', url: 'heads'
+              'tags':
+                url: 'tags'
+                children:
+                  'all': verb: 'GET'
+                  'one': verb: 'GET', urlArgs: ['tagName']
+
+              'heads':
+                url: 'heads'
+                children:
+                  'all': verb: 'GET'
+                  'one': verb: 'GET', urlArgs: ['headName']
 
           'tags':
             url: 'tags'
@@ -331,6 +341,71 @@ define 'octokit-part/types', [
             children:
               'one': verb: 'GET', urlArgs: ['sha'], hasQueryArg: true # {recursive: 1}
               'create': verb: 'POST', hasDataArg: true
+
+    constructor: () ->
+      super
+      # Write the contents of multiple files to a given branch
+      # -------
+      # Each file can also be binary.
+      #
+      # In general `contents` is a map where the key is the path and the value is `{content:'Hello World!', isBase64:false}`.
+      # In the case of non-base64 encoded files the value may be a string instead.
+      #
+      # Example:
+      #
+      #     contents = {
+      #       'hello.txt':          'Hello World!',
+      #       'path/to/hello2.txt': { content: 'Ahoy!', isBase64: false}
+      #     }
+      #
+      # Optionally takes an array of `parentCommitShas` which will be used as the
+      # parents of this commit.
+      @writeMany = (contents, message="Changed Multiple", parentCommitShas=null) =>
+        # This method:
+        #
+        # 0. Finds the latest commit if one is not provided
+        # 1. Asynchronously send new blobs for each file
+        # 2. Use the return of the new Blob Post to return an entry in the new Commit Tree
+        # 3. Wait on all the new blobs to finish
+        # 4. Commit and update the branch
+        branch = @defaultBranch # TODO: unhardcode me
+
+        afterParentCommitShas = (parentCommitShas) => # 1. Asynchronously send all the files as new blobs.
+          promises = for path, data of contents
+            do (path, data) =>
+              # `data` can be an object or a string.
+              # If it is a string assume isBase64 is false and the string is the content
+              content = data.content or data
+              isBase64 = data.isBase64 or false
+
+              @git.blobs.create(content, isBase64)
+              .then (blob) => # 2. return an entry in the new Commit Tree
+                return {
+                  path: path
+                  mode: '100644'
+                  type: 'blob'
+                  sha: blob
+                }
+          # 3. Wait on all the new blobs to finish
+          # Different Promise APIs implement this differently. For example:
+          # - Promise uses `Promise.all([...])`
+          # - jQuery uses `jQuery.when(p1, p2, p3, ...)`
+          allPromises(promises)
+          .then (newTrees) =>
+            @git.trees.create({base_tree: parentCommitShas, tree: newTrees})
+            .then ({sha:tree}) => # 4. Commit and update the branch
+              @git.commits.create({message, tree, parents:parentCommitShas})
+              .then ({sha:commitSha}) =>
+                @git.refs.update(branch, {sha:commitSha})
+                .then (res) => # Finally, return the result
+                  return res.object # Return something that has a `.sha` to match the signature for read
+
+        # 0. Finds the latest commit if one is not provided
+        if parentCommitShas
+          return afterParentCommitShas(parentCommitShas)
+        else
+          return @git.refs.heads.one(branch).then(afterParentCommitShas)
+
 
 
   class Gist extends Base
@@ -363,18 +438,24 @@ define 'octokit-part/types', [
       'comments':
         url: 'comments'
         children:
-          'all':    verb: 'GET'
-          'one':    verb: 'GET',    urlArgs: ['commentId']
+          'all':    verb: 'GET',    hasDataArg: true
           'create': verb: 'POST',   hasDataArg: true
-          'update': verb: 'PATCH',  urlArgs: ['commentId'], hasDataArg: true
-          'remove': verb: 'DELETE', urlArgs: ['commentId']
+          # 'update': verb: 'PATCH',  urlArgs: ['commentId'], hasDataArg: true
+          # 'remove': verb: 'DELETE', urlArgs: ['commentId']
+
+  class Comment extends Base
+    _test: (obj) -> /\/repos\/[^\/]+\/[^\/]+\/issues\/comments\/[^\/]+$/.test(obj.url) or
+                    /\/repos\/[^\/]+\/[^\/]+\/pulls\/comments\/[^\/]+$/.test(obj.url)
+    _autogen:
+      'update': verb: 'PATCH', hasDataArg: true
+      'remove': verb: 'DELETE'
 
   class Event extends Base
     _test: (obj) -> obj.type in ['PushEvent', 'MemberEvent']
     constructor: (request, json) ->
       super
 
-  types = {User, Me, Team, Org, Repo, Gist, Issue, Event}
+  types = {User, Me, Team, Org, Repo, Gist, Issue, Comment, Event}
 
   module?.exports = types
   return types
