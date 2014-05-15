@@ -1,0 +1,42 @@
+{
+  "statusCode": 200,
+  "headers": {
+    "server": "GitHub.com",
+    "date": "Thu, 15 May 2014 12:23:19 GMT",
+    "content-type": "application/json; charset=utf-8",
+    "connection": "close",
+    "status": "200 OK",
+    "x-ratelimit-limit": "30",
+    "x-ratelimit-remaining": "29",
+    "x-ratelimit-reset": "1400156659",
+    "cache-control": "no-cache",
+    "x-oauth-scopes": "gist, repo, user",
+    "x-accepted-oauth-scopes": "repo",
+    "x-github-media-type": "github.v3; param=raw",
+    "link": "<https://api.github.com/search/repositories?q=github&page=2>; rel=\"next\", <https://api.github.com/search/repositories?q=github&page=34>; rel=\"last\"",
+    "x-xss-protection": "1; mode=block",
+    "x-frame-options": "deny",
+    "content-security-policy": "default-src 'none'",
+    "content-length": "147043",
+    "access-control-allow-credentials": "true",
+    "access-control-expose-headers": "ETag, Link, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval",
+    "access-control-allow-origin": "*",
+    "x-github-request-id": "4B346F4D:21F0:149A2CF:5374B1B6",
+    "strict-transport-security": "max-age=31536000",
+    "x-content-type-options": "nosniff",
+    "vary": "Accept-Encoding",
+    "x-served-by": "a8d8e492d6966f0c23dee2eed64c678a"
+  },
+  "url": "https://api.github.com:443/search/repositories?q=github",
+  "time": 4835,
+  "request": {
+    "method": "GET",
+    "headers": {
+      "User-Agent": "octokit",
+      "Accept": "application/vnd.github.raw",
+      "If-Modified-Since": "Thu, 01 Jan 1970 00:00:00 GMT",
+      "Authorization": "token dca7f85a5911df8e9b7aeb4c5be8f5f50806ac49",
+      "Host": "api.github.com"
+    }
+  }
+}

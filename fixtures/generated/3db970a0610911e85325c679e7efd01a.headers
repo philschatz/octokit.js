@@ -1,0 +1,44 @@
+{
+  "statusCode": 201,
+  "headers": {
+    "server": "GitHub.com",
+    "date": "Thu, 15 May 2014 14:29:01 GMT",
+    "content-type": "application/json; charset=utf-8",
+    "connection": "close",
+    "status": "201 Created",
+    "x-ratelimit-limit": "5000",
+    "x-ratelimit-remaining": "4998",
+    "x-ratelimit-reset": "1400167649",
+    "cache-control": "private, max-age=60, s-maxage=60",
+    "etag": "\"3d0dfff350e3b664f5f6e31c53a85283\"",
+    "x-oauth-scopes": "gist, repo, user",
+    "x-accepted-oauth-scopes": "",
+    "location": "https://api.github.com/repos/octokit-test/octokit-test-repo/issues/1",
+    "vary": "Accept, Authorization, Cookie, X-GitHub-OTP",
+    "x-github-media-type": "github.v3; param=raw",
+    "x-xss-protection": "1; mode=block",
+    "x-frame-options": "deny",
+    "content-security-policy": "default-src 'none'",
+    "content-length": "1628",
+    "access-control-allow-credentials": "true",
+    "access-control-expose-headers": "ETag, Link, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval",
+    "access-control-allow-origin": "*",
+    "x-github-request-id": "4B346F4D:5229:1040121:5374CF2D",
+    "strict-transport-security": "max-age=31536000",
+    "x-content-type-options": "nosniff"
+  },
+  "url": "https://api.github.com:443/repos/octokit-test/octokit-test-repo/issues",
+  "time": 584,
+  "request": {
+    "method": "POST",
+    "headers": {
+      "User-Agent": "octokit",
+      "Accept": "application/vnd.github.raw",
+      "Content-Type": "application/json",
+      "If-Modified-Since": "Thu, 01 Jan 1970 00:00:00 GMT",
+      "Authorization": "token dca7f85a5911df8e9b7aeb4c5be8f5f50806ac49",
+      "Host": "api.github.com",
+      "Content-Length": 22
+    }
+  }
+}
