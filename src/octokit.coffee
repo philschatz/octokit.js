@@ -38,7 +38,7 @@ define 'octokit', [
     global:
       zen: () -> request('GET', '/zen', null, raw:true)
       users: (config) -> request('GET', '/users', config)
-      gists: (config) -> request('GET', '/gists', config)
+      gists: (config) -> request('GET', '/gists/public', config)
       events: (config) -> request('GET', '/events', config)
       notifications: (config) -> request('GET', '/notifications', config)
 
@@ -56,7 +56,7 @@ define 'octokit', [
     gist: (id) -> request('GET', "/gists/#{id}")
 
     gists:
-      all: () -> request('GET', '/gists')
+      all: () -> request('GET', '/gists/public')
       create: (options) -> request('POST', '/gists', options)
 
     issues: (config) -> request('GET', '/issues', config)
