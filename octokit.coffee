@@ -1372,6 +1372,33 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
           @isStarred = () ->
             _request 'GET', "#{_gistPath}", null, {isBoolean:true}
 
+          # Get all comments for a gist
+          # -------
+          @comments = () ->
+            _request 'GET', "#{_gistPath}/comments"
+
+          # Get a specific comment for a gist by id
+          # -------
+          @comment = (id) ->
+            _request 'GET', "#{_gistPath}/comments/#{id}"
+
+          # Create a comment from a given string
+          # -------
+          @createComment = (body) ->
+            comment = {body: body}
+            _request 'POST', "#{_gistPath}/comments", comment
+
+          # Update a specific comment
+          # -------
+          @updateComment = (id, body) ->
+            comment = {body: body}
+            _request 'PATCH', "#{_gistPath}/comments/#{id}", comment
+
+          # Delete a given comment
+          # -------
+          @deleteComment = (id) ->
+            _request 'DELETE', "#{_gistPath}/comments/#{id}"
+
 
       # Top Level API
       # -------
