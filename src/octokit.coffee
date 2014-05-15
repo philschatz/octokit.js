@@ -35,7 +35,6 @@ define 'octokit', [
       return "?#{params.join('&')}"
 
 
-
     global:
       zen: () -> request('GET', '/zen', null, raw:true)
       users: (config) -> request('GET', '/users', config)
@@ -55,10 +54,10 @@ define 'octokit', [
     org:  (id) -> request('GET', "/orgs/#{id}")
     repo: (user, name) -> request('GET', "/repos/#{user}/#{name}")
     gist: (id) -> request('GET', "/gists/#{id}")
+
     gists:
-      fetch: () -> request('GET', '/gists')
+      all: () -> request('GET', '/gists')
       create: (options) -> request('POST', '/gists', options)
-      remove: (id) -> request('DELETE', "/gists/#{id}")
 
     issues: (config) -> request('GET', '/issues', config)
 

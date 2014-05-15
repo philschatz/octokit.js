@@ -2,32 +2,47 @@ define = window?.define or (name, deps, cb) -> cb (require(dep.replace('cs!octok
 define 'octokit-part/types', [], () ->
 
 
-  # Utility classes for various containerish calls:
-  # like `following`, `members`, `collaborators`, `keys`, `emails`, `git.commits`, `stars`
-  Createable = (request, root) ->
-    fn = () -> request('GET', root)
-    fn.create = (config) -> request('POST', root, config)
-    fn
+  methodGenerator = (request, rootUrl, context, config) ->
+    for name, methodConfig of config
+      do (methodConfig) ->
+        {verb, url, urlSuffix, urlArgs, urlSeparator, hasQueryArg, hasDataArg, raw, isBase64, isBoolean, children} = methodConfig
+        url ?= ''
+        verb ?= 'NONE'
+        urlArgs ?= []
+        urlSeparator ?= '/'
+        urlSuffix ?= ''
 
+        options = {raw, isBase64, isBoolean}
 
-  Addable = (request, root) ->
-    fn = () -> request('GET', root)
-    fn.add    = (id) -> request('PUT', "#{root}/#{id}", null, isBoolean:true)
-    fn.remove = (id) -> request('DELETE', "#{root}/#{id}", null, isBoolean:true)
-    fn
+        if url and url[0] isnt '/'
+          url = "#{rootUrl}/#{url}"
+        else
+          url = rootUrl
 
-  Isable = (fn, request, root) ->
-    throw new Error("BUG: Missing function for #{root}") if not fn
-    fn.add    = (id) -> request('PUT', "#{root}/#{id}", null, isBoolean:true)
-    fn.remove = (id) -> request('DELETE', "#{root}/#{id}", null, isBoolean:true)
+        url = "#{url}#{urlSuffix}"
 
-  Toggle = (fn, request, root) ->
-    throw new Error("BUG: Missing function for #{root}") if not fn
-    fn.add    = () -> request('PUT', root, null, isBoolean:true)
-    fn.remove = () -> request('DELETE', root, null, isBoolean:true)
+        myRoot = url
 
+        if verb is 'NONE'
+          context[name] = {}
+        else
+          context[name] = (args...) ->
+            myUrl = url
+            for argName, i in urlArgs
+              if args.length
+                myUrl += "#{urlSeparator}#{args.shift()}"
 
+            if hasQueryArg and args.length
+              myUrl += toQueryString(args.shift())
 
+            data = null
+            if hasDataArg and args.length
+              data = args.shift()
+
+            request(verb, myUrl, data, options)
+
+        # Recurse on children
+        methodGenerator(request, myRoot, context[name], methodConfig.children) if methodConfig.children
 
 
 
@@ -40,195 +55,287 @@ define 'octokit-part/types', [], () ->
 
       @fetch = () => request('GET', @url)
 
+      methodGenerator(request, @url, @, @_autogen) if @_autogen
 
 
   class User extends Base
     _test: (obj) -> obj.type is 'User'
-    constructor: (request, json) ->
-      super
-      @repos      = (config) => request('GET', "#{@url}/repos", config)
-      @orgs       = (config) => request('GET', "#{@url}/orgs")
-      @gists      = (config) => request('GET', "#{@url}/gists")
-      @followers  = () => request('GET', "#{@url}/followers")
-      @following = (id=null) =>
-        return request('GET', "#{@url}/#{id}", null, isBoolean:true) if id
-        return request('GET', @url)
-      @keys = () => request('GET', "#{@url}/keys")
+    _autogen:
+      'repos':      verb: 'GET', url: 'repos', hasDataArg: true
+      'orgs':       verb: 'GET', url: 'orgs'
+      'gists':      verb: 'GET', url: 'gists'
+      'followers':  verb: 'GET', url: 'followers'
 
-      @events = (onlyPublic) =>
-        pub = ''
-        pub = '/public' if onlyPublic is true
-        request('GET', "#{@url}/events#{pub}")
+      'following':
+        url: 'following'
+        children:
+          'all':  verb: 'GET'
+          'is':   verb: 'GET', urlArgs: ['id'], isBoolean: true
 
-      @receivedEvents = (onlyPublic) =>
-        pub = ''
-        pub = '/public' if onlyPublic is true
-        request('GET', "#{@url}/received_events#{pub}")
+      'keys':           verb: 'GET', url: 'keys'
+      'events':         verb: 'GET', url: 'events'
+      'receivedEvents': verb: 'GET', url: 'received_events'
+      'eventsPublic':   verb: 'GET', url: 'events/public'
+      'receivedEventsPublic': verb: 'GET', url: 'received_events/public'
 
 
-  class Me extends User
+
+  class Me extends Base
     _test: () -> false
+    _autogen:
+      'repos':      verb: 'GET', url: 'repos', hasDataArg: true
+      'orgs':       verb: 'GET', url: 'orgs'
+      'followers':  verb: 'GET', url: 'followers'
+
+      # Specific to Authenticated user
+      'following':
+        url: 'following'
+        children:
+          'all':    verb: 'GET'
+          'is':     verb: 'GET',    urlArgs: ['id'], isBoolean: true
+          'add':    verb: 'PUT',    urlArgs: ['id'], isBoolean: true
+          'remove': verb: 'DELETE', urlArgs: ['id'], isBoolean: true
+
+      'emails':
+        url: 'emails'
+        children:
+          'all':    verb: 'GET'
+          'is':     verb: 'GET',    urlArgs: ['id'], isBoolean: true
+          'add':    verb: 'PUT',    urlArgs: ['id'], isBoolean: true
+          'remove': verb: 'DELETE', urlArgs: ['id'], isBoolean: true
+
+      # 'keys':
+      #   url: 'keys'
+      #   children:
+      #     'all':    verb: 'GET'
+      #     'one':    verb: 'GET',    urlArgs: ['id']
+      #     'is':     verb: 'GET',    urlArgs: ['id'], isBoolean: true
+      #     'add':    verb: 'PUT',    urlArgs: ['id'], isBoolean: true
+      #     'remove': verb: 'DELETE', urlArgs: ['id'], isBoolean: true
+
+      'issues': url: 'issues', verb: 'GET', hasDataArg: true
+
     constructor: (request) ->
       super(request, {url:'/user'})
 
-      Isable(@following, request, "#{@url}/following")
-      @emails    = Addable(request, "#{@url}/emails")
-      @keys      = Addable(request, "#{@url}/keys")
-      @key = (id) =>
-        fetch: () => request('GET', "#{@url}/keys/#{id}")
-
-      @issues = (config) => request('GET', "#{@url}/issues", config)
 
   class Team extends Base
     _test: (obj) -> /\/teams\//.test(obj.url)
-    constructor: (request, json) ->
-      super
-      @update = (config) => request('PATCH', @url, config)
-      @remove = () => request('DELETE', @url)
+    _autogen:
+      'update': verb: 'PATCH', dataArg: true
+      'remove': verb: 'DELETE'
+      'members':
+        url: 'members'
+        children:
+          'all': verb: 'GET'
+          'is':
+            verb: 'GET'
+            urlArgs: ['id']
+            isBoolean: true
+          'add':
+            verb: 'PUT'
+            urlArgs: ['id']
+            isBoolean: true
+          'remove':
+            verb: 'DELETE'
+            urlArgs: ['id']
+            isBoolean: true
 
-      Isable(@members, request, "#{@url}/members")
-
-      @repositories.add =    (user, name) => request('PUT', "#{@url}/repos/#{user}/#{name}")
-      @repositories.remove = (user, name) => request('DELETE', "#{@url}/repos/#{user}/#{name}")
+      'repos':
+        url: 'repos'
+        'all': verb: 'GET'
+        children:
+          'add':    verb: 'PUT',    urlArgs: ['repoUser', 'repoName'], isBoolean: true
+          'remove': verb: 'DELETE', urlArgs: ['repoUser', 'repoName'], isBoolean: true
 
 
   class Org extends Base
     _test: (obj) -> /\/orgs\//.test(obj.url)
-    constructor: (request, json) ->
-      super
-      @update = (config) => request('PATCH', @url, config)
-      @teams = Createable(request, "#{@url}/teams")
-      Isable(@members, request, "#{@url}/members")
-      @repos = () => request('GET', "#{@url}/repos")
-      @repos.create = (name) => request('POST', "#{@url}/repos/#{name}")
+    _autogen:
+      'update': verb: 'PATCH', dataArg: true
+      'remove': verb: 'DELETE'
+      'teams':
+        url: 'teams'
+        children:
+          'all':    verb: 'GET'
+          'create': verb: 'POST', dataArg: true
 
-      @issues = (config) => request('GET', "#{@url}/issues", config)
+      'members':
+        url: 'members'
+        children:
+          'all': verb: 'GET'
+          'is':
+            verb: 'GET'
+            urlArgs: ['id']
+            isBoolean: true
+          'add':
+            verb: 'PUT'
+            urlArgs: ['id']
+            isBoolean: true
+          'remove':
+            verb: 'DELETE'
+            urlArgs: ['id']
+            isBoolean: true
 
+      'repos':
+        url: 'repos'
+        children:
+          'all':    verb: 'GET'
+          'create': verb: 'POST', urlArgs: ['repoName']
 
-  class Git
-    _test: () -> false
-    constructor: (request, root) ->
-      @url = "#{root}/git"
+      'issues':
+        url: 'issues'
+        children:
+          'all': verb: 'GET'
 
-      @commits = Createable(request, "#{@url}/git/commits")
-
-      @refs =
-        create: (config) => request('POST', "#{@url}/refs", config)
-        remove: (id) => request('DELETE', "#{@url}/refs/#{id}")
-      @ref = (id) =>
-        fetch: () => request('GET', "#{@url}/refs/#{id}")
-
-      @heads =
-        fetch: () => request('GET', "#{@url}/heads")
-      @head = (id) =>
-        update: (config) => request('PATCH', "#{@url}/heads/#{id}", config)
-
-      @blobs =
-        create: (content, isBase64) =>
-          if typeof content is 'string'
-            # Base64 encode the content if it is binary (isBase64)
-            content = base64encode(content) if isBase64 is true
-            content =
-              content: content
-              encoding: 'utf-8'
-          content.encoding = 'base64' if isBase64 is true
-          request('POST', "#{@url}/blobs", content)
-          # TODO: .then (val) => val.sha
-      @blob = (id, isBase64) =>
-        options =
-          raw: true
-          isBase64: isBase64 is true
-        fetch: () => request('GET', "#{@url}/blobs/#{id}", null, options)
-
-      @trees =
-        create: (config) => request('POST', "#{@url}/trees", config)
-      @tree = (id) =>
-        fetch: () => request('GET', "#{@url}/trees/#{id}")
 
 
   class Repo extends Base
     _test: (obj) -> /\/repos\/[^\/]+\/[^\/]+$/.test(obj.url)
-    constructor: (request, json) ->
-      super
+    _autogen:
+      'update': verb: 'PATCH', dataArg: true
+      'remove': verb: 'DELETE'
 
-      @git = new Git(request, @url)
+      'languages':  verb: 'GET', url: 'languages'
+      'releases':   verb: 'GET', url: 'releases'
 
-      @fetch = () => request('GET', @url)
-      @update = (config) => request('PATCH', @url, config)
-      # TODO: move remove out of here
-      @remove = () => request('DELETE', @url)
-      @forks = () => request('GET', "#{@url}/forks")
-      @forks.create = (config) => request('POST', "#{@url}/forks", config)
+      'forks':
+        url: 'forks'
+        children:
+          'all':    verb: 'GET'
+          'create': verb: 'POST', dataArg: true
 
-      @pulls?.create = (config) => request('POST', "#{@url}/pulls", config)
-      @issues = (config) =>
-        if typeof config is 'number'
-          return request('GET', "#{@url}/issues/#{config}")
-        request('GET', "#{@url}/issues", config)
-      @issues.events = () => request('GET', "#{@url}/issues/events")
-      @issues.create = (config) => request('POST', "#{@url}/issues", config)
-      @issues.update = (id, config) => request('PATCH', "#{@url}/issues/#{id}", config)
+      'pulls':
+        url: 'pulls'
+        children:
+          'all':    verb: 'GET'
+          'create': verb: 'POST', dataArg: true
 
-      # Network is slightly different because its @url is not `/repos/`
-      @network =
-        events: () => request('GET', "/networks/#{@owner.login}/#{@name}/events")
-      @notifications = (config) => request('GET', "#{@url}/notifications", config)
+      'issues':
+        url: 'issues'
+        children:
+          'all': verb: 'GET'
+          'one': verb: 'GET', urlArgs: ['id']
+          'create': verb: 'POST', dataArg: true
+          'events': verb: 'GET', url: 'events'
 
-      @collaborators = (id=null) =>
-        return request('GET', "#{@url}/collaborators/#{id}", null, isBoolean:true) if id
-        return request('GET', "#{@url}/collaborators")
-      Isable(@collaborators, request, "#{@url}/collaborators")
+      'notifications': verb: 'GET', url: 'notifications', dataArg: true
 
-      @hooks?.create = (config) => request('POST', "#{@url}/hooks", config)
-      @hooks?.remove = (id) => request('DELETE', "#{@url}/hooks/#{id}")
-      @hooks?.test   = (id) => request('POST', "#{@url}/hooks/#{id}/tests")
-      @hooks?.update = (id, config) => request('PATCH', "#{@url}/hooks/#{id}", config)
+      'collaborators':
+        url: 'collaborators'
+        children:
+          'all': verb: 'GET'
+          'is':
+            verb: 'GET'
+            urlArgs: ['id']
+            isBoolean: true
+          'add':
+            verb: 'PUT'
+            urlArgs: ['id']
+            isBoolean: true
+          'remove':
+            verb: 'DELETE'
+            urlArgs: ['id']
+            isBoolean: true
 
-      @contents = (path, sha) =>
-        fetch: () =>
-          queryString = toQueryString({ref:sha})
-          request('GET', "#{@url}/contents/#{path}#{queryString}", null, raw:true)
-        remove: (config) =>
-          throw new Error('BUG: message is required') unless config.message
-          config.sha = sha
-          request('DELETE', "#{@url}/contents/#{path}", config)
+      'hooks':
+        url: 'hooks'
+        children:
+          'all': verb: 'GET'
+          'create': verb: 'POST', hasDataArg: true
+          # TODO: Should there be a Hook class?
+          'update': verb: 'PATCH', urlArgs: ['hookId'], hasDataArg: true
+          'remove': verb: 'DELETE', urlArgs: ['hookId']
+          'test':   verb: 'POST', urlSuffix: '/tests', urlArgs: ['hookId']
 
-      @languages = () => request('GET', "#{@url}/languages")
-      @releases = () => request('GET', "#{@url}/releases")
+      'contents':
+        url: 'contents'
+        read:   verb: 'GET',    urlArgs: ['path'], hasQueryArg: true, raw: true
+        remove: verb: 'DELETE', urlArgs: ['path'], hasDataArg: true
 
+
+      'git':
+        url: 'git'
+        children:
+          'commits':
+            url: 'commits'
+            children:
+              'all':    verb: 'GET'
+              'create': verb: 'POST', hasDataArg: true
+          'refs':
+            url: 'refs'
+            children:
+              'one':    verb: 'GET', urlArgs: ['refId']
+              'create': verb: 'POST', hasDataArg: true
+              'remove': verb: 'DELETE', urlArgs: ['refId']
+          'heads':
+            url: 'heads'
+            children:
+              all: verb: 'GET'
+              update: verb: 'PATCH', urlArgs: ['headId']
+
+          'blobs':
+            url: 'blobs'
+            children:
+              'create': (request, rootUrl) ->
+                (content, isBase64) ->
+                  if typeof content is 'string'
+                    # Base64 encode the content if it is binary (isBase64)
+                    content = base64encode(content) if isBase64 is true
+                    content =
+                      content: content
+                      encoding: 'utf-8'
+                  content.encoding = 'base64' if isBase64 is true
+                  request('POST', rootUrl, content)
+                  # TODO: .then (val) => val.sha
+              'one': (request, rootUrl) ->
+                (sha, isBinary) ->
+                  request 'GET', "#{rootUrl}/#{sha}", null, raw: true, isBinary: isBinary is true
+
+          'trees':
+            url: 'trees'
+            children:
+              'one': verb: 'GET', urlArgs: ['sha']
+              'create': verb: 'POST', hasDataArg: true
 
 
   class Gist extends Base
     _test: (obj) -> /\/gists\//.test(obj.url)
-    constructor: (request, json) ->
-      super
-      @fetch  = () => request('GET', @url)
-      @update = (config) => request('PATCH', @url, config)
-      @remove = () => request('DELETE', @url)
 
-      @forks.create = () => request('POST', "#{@url}/forks")
+    _autogen:
+      'update': verb: 'PATCH', hasDataArg: true
+      'remove': verb: 'DELETE'
 
-      @starred = () => request('GET', "#{@url}/star", null, isBoolean:true)
-      @starred.add    = () => request('PUT', "#{@url}/star", null, isBoolean:true)
-      @starred.remove = () => request('DELETE', "#{@url}/star", null, isBoolean:true)
+      'forks':
+        url: 'forks'
+        children:
+          'create': verb: 'POST', hasDataArg: true
+
+      'starred':
+        url: 'star'
+        children:
+          'is':     verb: 'GET', isBoolean: true
+          'add':    verb: 'PUT', isBoolean: true
+          'remove': verb: 'DELETE', isBoolean: true
 
 
   class Issue extends Base
-    _test: (obj) -> /\/repos\/[^\/]+\/[^\/]+\/issues\/[^\/]+$/.test(obj.url) or /\/repos\/[^\/]+\/[^\/]+\/pulls\/[^\/]+$/.test(obj.url)
-    constructor: (request, json) ->
-      super
-      @update = (config) => request('PATCH', @url, config)
-      @comments = Createable(request, "#{@url}/comments")
-      @comments.update = (id, config) => request('PATCH', "#{@url}/comments/#{id}", config)
-      @comments.remove = (id) => request('DELETE', "#{@url}/comments/#{id}")
-
+    _test: (obj) -> /\/repos\/[^\/]+\/[^\/]+\/issues\/[^\/]+$/.test(obj.url) or
+                    /\/repos\/[^\/]+\/[^\/]+\/pulls\/[^\/]+$/.test(obj.url)
+    _autogen:
+      'update': verb: 'PATCH', hasDataArg: true
+      'comments':
+        url: 'comments'
+        children:
+          'update': verb: 'PATCH',  urlArgs: ['commentId'], hasDataArg: true
+          'remove': verb: 'DELETE', urlArgs: ['commentId']
 
   class Event extends Base
     _test: (obj) -> obj.type in ['PushEvent', 'MemberEvent']
     constructor: (request, json) ->
       super
 
-  types = {User, Me, Team, Org, Git, Repo, Gist, Issue, Event}
+  types = {User, Me, Team, Org, Repo, Gist, Issue, Event}
 
   module?.exports = types
   return types

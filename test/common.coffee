@@ -57,6 +57,7 @@ makeTests = (assert, expect, btoa, Octokit) ->
     GH = 'GH'
     REPO = 'REPO'
     USER = 'USER'
+    ME = 'ME'
     BRANCH = 'BRANCH'
     ANOTHER_USER = 'ANOTHER_USER'
     ORG = 'ORG'
@@ -121,7 +122,7 @@ makeTests = (assert, expect, btoa, Octokit) ->
     itIsOk(GH, 'org', ORG_NAME)
     itIsOk(GH, 'repo', REPO_USER, REPO_NAME)
     itIsOk(GH, 'issues')
-    itIsOk(GH, 'gists.fetch')
+    itIsOk(GH, 'gists.all')
 
     it 'fetches a repo', () ->
       trapFail(STATE[GH].repo(REPO_USER, REPO_NAME))
@@ -139,8 +140,8 @@ makeTests = (assert, expect, btoa, Octokit) ->
 
       describe 'Accessors for methods generated from URL patterns', () ->
         @timeout(LONG_TIMEOUT)
-        itIsArray(REPO, 'collaborators')
-        itIsArray(REPO, 'hooks')
+        itIsArray(REPO, 'collaborators.all')
+        itIsArray(REPO, 'hooks.all')
         itIsArray(REPO, 'assignees')
         itIsArray(REPO, 'branches')
         itIsArray(REPO, 'contributors')
@@ -154,11 +155,11 @@ makeTests = (assert, expect, btoa, Octokit) ->
 
       describe 'Collaborator changes', () ->
         it 'gets a list of collaborators', (done) ->
-          trapFail(STATE[REPO].collaborators())
+          trapFail(STATE[REPO].collaborators.all())
           .then (v) -> expect(v).to.be.an.array; done()
 
         it 'tests membership', (done) ->
-          trapFail(STATE[REPO].collaborators(REPO_USER))
+          trapFail(STATE[REPO].collaborators.is(REPO_USER))
           .then (v) -> expect(v).to.be.true; done()
 
         it 'adds and removes a collaborator', (done) ->
@@ -183,8 +184,8 @@ makeTests = (assert, expect, btoa, Octokit) ->
       itIsArray(USER, 'orgs')
       itIsArray(USER, 'gists')
       itIsArray(USER, 'followers')
-      itIsArray(USER, 'following')
-      itIsFalse(USER, 'following', 'defunkt')
+      itIsArray(USER, 'following.all')
+      itIsFalse(USER, 'following.is', 'defunkt')
       itIsArray(USER, 'keys')
       itIsArray(USER, 'events')
       itIsArray(USER, 'receivedEvents')
@@ -198,8 +199,26 @@ makeTests = (assert, expect, btoa, Octokit) ->
           STATE[ORG] = v
           done()
 
-      itIsArray(ORG, 'members')
-      itIsArray(ORG, 'repos')
+      itIsArray(ORG, 'members.all')
+      itIsArray(ORG, 'repos.all')
+
+
+    describe '.me', () ->
+
+      before () ->
+        STATE[ME] = STATE[GH].me
+
+      itIsArray(ME, 'repos')
+      itIsArray(ME, 'orgs')
+      itIsArray(ME, 'followers')
+      itIsArray(ME, 'following.all')
+      itIsFalse(ME, 'following.is', 'defunkt')
+      itIsArray(ME, 'emails.all')
+      itIsFalse(ME, 'emails.is', 'invalid@email.com')
+      # itIsArray(ME, 'keys.all')
+      # itIsFalse(ME, 'keys.is', 'invalid-key')
+
+      itIsArray(ME, 'issues')
 
 
     #   describe 'Initially:', () ->
