@@ -62,6 +62,7 @@ makeTests = (assert, expect, btoa, Octokit) ->
     ANOTHER_USER = 'ANOTHER_USER'
     ORG = 'ORG'
     GIST = 'GIST'
+    ISSUE = 'ISSUE'
 
     STATE = {}
 
@@ -149,10 +150,12 @@ makeTests = (assert, expect, btoa, Octokit) ->
         itIsArray(REPO, 'labels')
         # itIsArray(REPO, 'stargazers')
         itIsArray(REPO, 'issues.all')
+        itIsArray(REPO, 'issues.events')
+        itIsArray(REPO, 'issues.comments.all')
+        # itIsArray(REPO, 'issues.comments.one', commentId)
 
-        # itIsOk(REPO, 'issues.one', 1)
-        # itIsOk(REPO, 'issues.create', {title: 'Unit Test Issue'})
-        # itIsOk(REPO, 'issues.update', 1, {title: 'Unit Test Issue with new Title', state: 'closed'})
+        itIsOk(REPO, 'issues.create', {title: 'Test Issue'})
+        itIsOk(REPO, 'issues.one', 1)
 
       describe '.git (Git Data)', () ->
 
@@ -302,6 +305,23 @@ makeTests = (assert, expect, btoa, Octokit) ->
           STATE[GIST].starred.remove()
           .then () ->
             done()
+
+
+
+    describe 'issue (Issues in a Repository)', (done) ->
+      before (done) ->
+        STATE[REPO].issues.one(1)
+        .then (issue) ->
+          STATE[ISSUE] = issue
+          done()
+
+      itIsOk(ISSUE, 'update', {title: 'New Title', state: 'closed'})
+      itIsOk(ISSUE, 'comments.all')
+      itIsOk(ISSUE, 'comments.create', {body: 'Test comment'})
+
+
+
+
 
 
     #   describe 'Initially:', () ->

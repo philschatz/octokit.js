@@ -6,7 +6,7 @@ define 'octokit-part/types', [
 
   methodGenerator = (request, rootUrl, context, config) ->
     for name, methodConfig of config
-      do (methodConfig) ->
+      do (name, methodConfig) ->
         if typeof methodConfig is 'function'
           context[name] = methodConfig(request, rootUrl)
         else
@@ -141,7 +141,7 @@ define 'octokit-part/types', [
   class Team extends Base
     _test: (obj) -> /\/teams\//.test(obj.url)
     _autogen:
-      'update': verb: 'PATCH', dataArg: true
+      'update': verb: 'PATCH', hasDataArg: true
       'remove': verb: 'DELETE'
       'members':
         url: 'members'
@@ -171,13 +171,13 @@ define 'octokit-part/types', [
   class Org extends Base
     _test: (obj) -> /\/orgs\//.test(obj.url)
     _autogen:
-      'update': verb: 'PATCH', dataArg: true
+      'update': verb: 'PATCH', hasDataArg: true
       'remove': verb: 'DELETE'
       'teams':
         url: 'teams'
         children:
           'all':    verb: 'GET'
-          'create': verb: 'POST', dataArg: true
+          'create': verb: 'POST', hasDataArg: true
 
       'members':
         url: 'members'
@@ -208,7 +208,7 @@ define 'octokit-part/types', [
   class Repo extends Base
     _test: (obj) -> /\/repos\/[^\/]+\/[^\/]+$/.test(obj.url)
     _autogen:
-      'update': verb: 'PATCH', dataArg: true
+      'update': verb: 'PATCH', hasDataArg: true
       'remove': verb: 'DELETE'
 
       'languages':  verb: 'GET', url: 'languages'
@@ -219,23 +219,28 @@ define 'octokit-part/types', [
         url: 'forks'
         children:
           'all':    verb: 'GET'
-          'create': verb: 'POST', dataArg: true
+          'create': verb: 'POST', hasDataArg: true
 
       'pulls':
         url: 'pulls'
         children:
           'all':    verb: 'GET'
-          'create': verb: 'POST', dataArg: true
+          'create': verb: 'POST', hasDataArg: true
 
       'issues':
         url: 'issues'
         children:
           'all': verb: 'GET'
           'one': verb: 'GET', urlArgs: ['id']
-          'create': verb: 'POST', dataArg: true
+          'create': verb: 'POST', hasDataArg: true
           'events': verb: 'GET', url: 'events'
+          'comments':
+            url: 'comments'
+            children:
+              'all': verb: 'GET'
+              'one': verb: 'GET', urlArgs: ['commentId']
 
-      'notifications': verb: 'GET', url: 'notifications', dataArg: true
+      'notifications': verb: 'GET', url: 'notifications', hasDataArg: true
 
       'collaborators':
         url: 'collaborators'
@@ -357,6 +362,9 @@ define 'octokit-part/types', [
       'comments':
         url: 'comments'
         children:
+          'all':    verb: 'GET'
+          'one':    verb: 'GET',    urlArgs: ['commentId']
+          'create': verb: 'POST',   hasDataArg: true
           'update': verb: 'PATCH',  urlArgs: ['commentId'], hasDataArg: true
           'remove': verb: 'DELETE', urlArgs: ['commentId']
 
