@@ -148,6 +148,11 @@ makeTests = (assert, expect, btoa, Octokit) ->
         itIsArray(REPO, 'milestones')
         itIsArray(REPO, 'labels')
         # itIsArray(REPO, 'stargazers')
+        itIsArray(REPO, 'issues.all')
+
+        # itIsOk(REPO, 'issues.one', 1)
+        # itIsOk(REPO, 'issues.create', {title: 'Unit Test Issue'})
+        # itIsOk(REPO, 'issues.update', 1, {title: 'Unit Test Issue with new Title', state: 'closed'})
 
       describe '.git (Git Data)', () ->
 
@@ -236,6 +241,7 @@ makeTests = (assert, expect, btoa, Octokit) ->
 
       itIsArray(ORG, 'members.all')
       itIsArray(ORG, 'repos.all')
+      itIsArray(ORG, 'issues')
 
 
     describe '.me', () ->

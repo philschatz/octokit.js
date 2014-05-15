@@ -202,11 +202,7 @@ define 'octokit-part/types', [
           'all':    verb: 'GET'
           'create': verb: 'POST', urlArgs: ['repoName']
 
-      'issues':
-        url: 'issues'
-        children:
-          'all': verb: 'GET'
-
+      'issues': verb: 'GET', url: 'issues'
 
 
   class Repo extends Base
