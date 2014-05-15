@@ -285,14 +285,20 @@ define 'octokit-part/types', [
           'refs':
             url: 'refs'
             children:
-              'one':    verb: 'GET', urlArgs: ['refId']
+              'all':    verb: 'GET'
+              'one':    verb: 'GET',  urlArgs: ['refId']
               'create': verb: 'POST', hasDataArg: true
               'remove': verb: 'DELETE', urlArgs: ['refId']
-          'heads':
-            url: 'heads'
+              'update': verb: 'PATCH',  urlArgs: ['refId']
+
+              'tags':   verb: 'GET', url: 'tags'
+              'heads':  verb: 'GET', url: 'heads'
+
+          'tags':
+            url: 'tags'
             children:
-              all: verb: 'GET'
-              update: verb: 'PATCH', urlArgs: ['headId']
+              'one':    verb: 'GET', urlArgs: ['tagName']
+              'create': verb: 'POST', hasDataArg: true
 
           'blobs':
             url: 'blobs'
@@ -315,7 +321,7 @@ define 'octokit-part/types', [
           'trees':
             url: 'trees'
             children:
-              'one': verb: 'GET', urlArgs: ['sha']
+              'one': verb: 'GET', urlArgs: ['sha'], hasQueryArg: true # {recursive: 1}
               'create': verb: 'POST', hasDataArg: true
 
 

@@ -149,9 +149,19 @@ makeTests = (assert, expect, btoa, Octokit) ->
         itIsArray(REPO, 'labels')
         # itIsArray(REPO, 'stargazers')
 
-      describe '.git', () ->
+      describe '.git (Git Data)', () ->
 
-        it '.blobs.create("Hello")   and .blobs.one(sha)', (done) ->
+        itIsArray(REPO, 'git.refs.all')
+        # itIsArray(REPO, 'git.refs.tags')    This repo does not have any tags: TODO: create a tag
+        itIsArray(REPO, 'git.refs.heads')
+
+        # itIsOk(REPO, 'git.tags.create', {tag:'test-tag', message:'Test tag for units', ...})
+        # itIsOk(REPO, 'git.tags.one', 'test-tag')
+        itIsOk(REPO, 'git.trees.one', 'c18ba7dc333132c035a980153eb520db6e813d57')
+        # itIsOk(REPO, 'git.trees.create', {tree: [sha], base_tree: sha})
+
+
+        it '.git.blobs.create("Hello")   and .blobs.one(sha)', (done) ->
           STATE[REPO].git.blobs.create('Hello')
           .then ({sha}) ->
             expect(sha).to.be.ok
@@ -160,7 +170,7 @@ makeTests = (assert, expect, btoa, Octokit) ->
               expect(v).to.equal('Hello')
               done()
 
-        it '.blobs.create(..., true) and .blobs.one(..., true) (binary flag)', (done) ->
+        it '.git.blobs.create(..., true) and .blobs.one(..., true) (binary flag)', (done) ->
           STATE[REPO].git.blobs.create('Hello', true)
           .then ({sha}) ->
             expect(sha).to.be.ok
