@@ -650,6 +650,39 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
           @getRepos = () ->
             _request 'GET', "/orgs/#{@name}/repos?type=all", null
 
+      # Commentable
+      # =======
+
+      # Mixin for resources that can accept comments
+      # -------
+      Commentable = (_resourcePath) ->
+        # Get all comments for a resourcei
+        # -------
+        comments: () ->
+          _request 'GET', "#{_resourcePath}/comments"
+
+        # Get a specific comment for a resource by id
+        # -------
+        comment: (id) ->
+          _request 'GET', "#{_resourcePath}/comments/#{id}"
+
+        # Create a comment from a given string
+        # -------
+        createComment: (body) ->
+          comment = {body: body}
+          _request 'POST', "#{_resourcePath}/comments", comment
+
+        # Update a specific comment
+        # -------
+        updateComment: (id, body) ->
+          comment = {body: body}
+          _request 'PATCH', "#{_resourcePath}/comments/#{id}", comment
+
+        # Delete a given comment
+        # -------
+        deleteComment: (id) ->
+          _request 'DELETE', "#{_resourcePath}/comments/#{id}"
+
 
       # Repository API
       # =======
@@ -1301,6 +1334,7 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
           id = @options.id
           _gistPath = "/gists/#{id}"
 
+          _.extend(@, Commentable(_gistPath))
 
           # Read the gist
           # --------
@@ -1371,33 +1405,6 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
           # -------
           @isStarred = () ->
             _request 'GET', "#{_gistPath}", null, {isBoolean:true}
-
-          # Get all comments for a gist
-          # -------
-          @comments = () ->
-            _request 'GET', "#{_gistPath}/comments"
-
-          # Get a specific comment for a gist by id
-          # -------
-          @comment = (id) ->
-            _request 'GET', "#{_gistPath}/comments/#{id}"
-
-          # Create a comment from a given string
-          # -------
-          @createComment = (body) ->
-            comment = {body: body}
-            _request 'POST', "#{_gistPath}/comments", comment
-
-          # Update a specific comment
-          # -------
-          @updateComment = (id, body) ->
-            comment = {body: body}
-            _request 'PATCH', "#{_gistPath}/comments/#{id}", comment
-
-          # Delete a given comment
-          # -------
-          @deleteComment = (id) ->
-            _request 'DELETE', "#{_gistPath}/comments/#{id}"
 
 
       # Top Level API
