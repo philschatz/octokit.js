@@ -1,7 +1,8 @@
 define = window?.define or (name, deps, cb) -> cb (require(dep.replace('cs!octokit-part/', './')) for dep in deps)...
 define 'octokit-part/types', [
   'cs!octokit-part/helper-base64'
-], (base64encode) ->
+  'cs!octokit-part/helper-promise'
+], (base64encode, {allPromises}) ->
 
 
   methodGenerator = (request, rootUrl, context, config) ->
@@ -298,19 +299,25 @@ define 'octokit-part/types', [
               'one':    verb: 'GET',  urlArgs: ['refId']
               'create': verb: 'POST', hasDataArg: true
               'remove': verb: 'DELETE', urlArgs: ['refId']
-              'update': verb: 'PATCH',  urlArgs: ['refId']
+              'update': verb: 'PATCH',  urlArgs: ['refId'], hasDataArg: true
 
               'tags':
                 url: 'tags'
                 children:
                   'all': verb: 'GET'
                   'one': verb: 'GET', urlArgs: ['tagName']
+                  'create': verb: 'POST', hasDataArg: true
+                  'remove': verb: 'DELETE', urlArgs: ['refId']
+                  'update': verb: 'PATCH',  urlArgs: ['refId'], hasDataArg: true
 
               'heads':
                 url: 'heads'
                 children:
                   'all': verb: 'GET'
                   'one': verb: 'GET', urlArgs: ['headName']
+                  'create': verb: 'POST', hasDataArg: true
+                  'remove': verb: 'DELETE', urlArgs: ['refId']
+                  'update': verb: 'PATCH',  urlArgs: ['refId'], hasDataArg: true
 
           'tags':
             url: 'tags'
@@ -379,7 +386,7 @@ define 'octokit-part/types', [
               isBase64 = data.isBase64 or false
 
               @git.blobs.create(content, isBase64)
-              .then (blob) => # 2. return an entry in the new Commit Tree
+              .then ({sha:blob}) => # 2. return an entry in the new Commit Tree
                 return {
                   path: path
                   mode: '100644'
@@ -394,9 +401,9 @@ define 'octokit-part/types', [
           .then (newTrees) =>
             @git.trees.create({base_tree: parentCommitShas, tree: newTrees})
             .then ({sha:tree}) => # 4. Commit and update the branch
-              @git.commits.create({message, tree, parents:parentCommitShas})
+              @git.commits.create({message, tree, parents:[parentCommitShas]})
               .then ({sha:commitSha}) =>
-                @git.refs.update(branch, {sha:commitSha})
+                @git.refs.heads.update(branch, {sha:commitSha})
                 .then (res) => # Finally, return the result
                   return res.object # Return something that has a `.sha` to match the signature for read
 
@@ -404,8 +411,8 @@ define 'octokit-part/types', [
         if parentCommitShas
           return afterParentCommitShas(parentCommitShas)
         else
-          return @git.refs.heads.one(branch).then(afterParentCommitShas)
-
+          return @git.refs.heads.one(branch).then ({object:{sha}}) =>
+            afterParentCommitShas(sha)
 
 
   class Gist extends Base
@@ -454,6 +461,7 @@ define 'octokit-part/types', [
     _test: (obj) -> obj.type in ['PushEvent', 'MemberEvent']
     constructor: (request, json) ->
       super
+
 
   types = {User, Me, Team, Org, Repo, Gist, Issue, Comment, Event}
 

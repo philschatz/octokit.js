@@ -164,8 +164,8 @@ makeTests = (assert, expect, btoa, Octokit) ->
       describe "#{REPO}.git... (Git Data)", () ->
 
         itIsArray(REPO, 'git.refs.all')
-        # itIsArray(REPO, 'git.refs.tags')    This repo does not have any tags: TODO: create a tag
-        itIsArray(REPO, 'git.refs.heads')
+        # itIsArray(REPO, 'git.refs.tags.all')    This repo does not have any tags: TODO: create a tag
+        itIsArray(REPO, 'git.refs.heads.all')
 
         # itIsOk(REPO, 'git.tags.create', {tag:'test-tag', message:'Test tag for units', ...})
         # itIsOk(REPO, 'git.tags.one', 'test-tag')
