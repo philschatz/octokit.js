@@ -48,16 +48,17 @@ define 'octokit-part/replacer', [
           while m = /(\{[^\}]+\})/.exec(value)
             # `match` is something like `{/foo}`
             match = m[1]
-            if i++ < arguments.length
+            if i < arguments.length
               # replace it
               param = arguments[i]
-              param = "/#{param}" if match[1] = '/'
+              param = "/#{param}" if match[1] is '/'
             else
               # Discard the remaining optional params in the URL
               param = ''
-              if match[1] != '/'
+              if match[1] isnt '/'
                 throw new Error("BUG: Missing required parameter #{match}")
             value = value.replace(match, param)
+            i++
 
           @_request('GET', value, null) # TODO: Heuristically set the isBoolean flag
         fn.url = value
