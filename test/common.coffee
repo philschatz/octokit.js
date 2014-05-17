@@ -194,6 +194,10 @@ makeTests = (assert, expect, base64encode, Octokit) ->
       itIsOk(REPO, 'issues.create', {title: 'Test Issue'})
       itIsOk(REPO, 'issues', 1, 'fetch')
 
+      # itIsOk(REPO, 'pages.fetch')
+      # itIsOk(REPO, 'pages.builds.fetch')
+      # itIsOk(REPO, 'pages.builds.latest.fetch')
+
       describe "#{REPO}.git... (Git Data)", () ->
 
         itIsArray(REPO, 'git.refs.fetch')

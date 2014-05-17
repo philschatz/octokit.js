@@ -65,6 +65,11 @@ define 'octokit-part/batcher', ['cs!octokit-part/plus'], (plus) ->
     'milestones'
     'labels'
 
+    # From https://developer.github.com/v3/repos/pages/
+    'pages'
+    'builds'
+    'latest'
+
     # Gist
     'star'
 
