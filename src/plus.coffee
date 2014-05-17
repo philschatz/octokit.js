@@ -1,5 +1,5 @@
 define = window?.define or (name, deps, cb) -> cb (require(dep.replace('cs!octokit-part/', './')) for dep in deps)...
-define 'octokit-part/replacer', ['cs!octokit-part/plus'], (plus) ->
+define 'octokit-part/plus', [], () ->
 
   # require('underscore-plus')
   plus =
