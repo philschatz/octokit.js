@@ -14,6 +14,107 @@ define 'octokit-part/batcher', ['cs!octokit-part/plus'], (plus) ->
     return "?#{params.join('&')}"
 
 
+  URL_VALIDATOR = /// ^
+
+    (https?://[^/]+)? # Optional protocol, host, and port
+    (/api/v3)?        # Optional API root for enterprise GitHub users
+
+    / (
+        zen
+      | users
+      | issues
+      | gists
+      | emojis
+      | meta
+      | rate_limit
+      | feeds
+      | gitignore/templates (/[^/]+)?
+
+      | user/ (
+          repos
+        | orgs
+        | followers
+        | following (/[^/]+)?
+        | emails    (/[^/]+)?
+        | issues
+        | starred   (/[^/]+){0,2}
+      )
+
+      | orgs/  [^/]+
+      | orgs/  [^/]+ / (
+            repos
+          | issues
+          | members
+        )
+
+
+      | users/ [^/]+
+      | users/ [^/]+ / (
+            repos
+          | orgs
+          | gists
+          | followers
+          | following (/[^/]+){0,2}
+          | keys
+          | events
+          | received_events
+        )
+
+
+      | search/ (
+            repositories
+          | issues
+          | users
+          | code
+        )
+
+
+      | gists/ (
+            public
+          | [a-f0-9]{20} (/star)?
+          | [0-9]+       (/star)?
+        )
+
+
+      | repos (/[^/]+){2}
+      | repos (/[^/]+){2} / (
+            hooks
+          | assignees
+          | branches
+          | contributors
+          | subscribers
+          | subscription
+          | comments
+          | downloads
+          | milestones
+          | labels
+          | collaborators (/[^/]+)?
+          | issues
+          | issues/ (
+                events
+              | comments (/[0-9]+)?
+              | [0-9]+ (/comments)?
+              )
+
+          | git/ (
+                refs (/heads)?
+              | trees (/[a-f0-9]{40}$)?
+              | blobs (/[a-f0-9]{40}$)?
+            )
+          | stats/ (
+                contributors
+              | commit_activity
+              | code_frequency
+              | participation
+              | punch_card
+            )
+        )
+    )
+    $
+  ///
+
+
+
   ALL_NOUNS = [
     # Global
     'repositories'
@@ -101,14 +202,20 @@ define 'octokit-part/batcher', ['cs!octokit-part/plus'], (plus) ->
         fn.__defineGetter__ plus.camelize(name), () ->
           return Batcher(request, "#{path}/#{name}")
 
-    fn.fetch        = (config) ->   request('GET', "#{path}#{toQueryString(config)}")
-    fn.read         = () ->         request('GET', path, null, raw:true)
-    fn.readBinary   = () ->         request('GET', path, null, raw:true, isBase64:true)
-    fn.remove       = () ->         request('DELETE', path, null, isBoolean:true)
-    fn.create       = (config, isRaw) ->   request('POST', path, config, raw:isRaw)
-    fn.update       = (config) ->   request('PATCH', path, config)
-    fn.add          = (args...) ->  request('PUT', path, null, isBoolean:true)
-    fn.contains     = (args...) ->  request('GET', "#{path}/#{args.join('/')}", null, isBoolean:true)
+    # Test if the path is constructed correctly
+    tester = (path) ->
+      unless URL_VALIDATOR.test(path)
+        throw new Error('BUG: Invalid Path. If this is an error then please update the URL_VALIDATOR')
+
+
+    fn.fetch        = (config) ->   tester(path); request('GET', "#{path}#{toQueryString(config)}")
+    fn.read         = () ->         tester(path); request('GET', path, null, raw:true)
+    fn.readBinary   = () ->         tester(path); request('GET', path, null, raw:true, isBase64:true)
+    fn.remove       = () ->         tester(path); request('DELETE', path, null, isBoolean:true)
+    fn.create       = (config, isRaw) ->   tester(path); request('POST', path, config, raw:isRaw)
+    fn.update       = (config) ->   tester(path); request('PATCH', path, config)
+    fn.add          = (args...) ->  tester(path); request('PUT', path, null, isBoolean:true)
+    fn.contains     = (args...) ->  tester(path); request('GET', "#{path}/#{args.join('/')}", null, isBoolean:true)
 
     return fn
 
