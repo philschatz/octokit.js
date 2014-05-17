@@ -14,4 +14,5 @@ require ['cs!octokit'], (Octokit) ->
   mocha.checkLeaks()
 
   # Needs to run once this file is loaded
+  window.sepia.start();
   mocha.run()

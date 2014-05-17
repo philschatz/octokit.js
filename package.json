@@ -34,7 +34,8 @@
     "chai": "~1.8.1",
     "mocha": "~1.14.0",
     "blanket": "~1.1.5",
-    "sepia": "~1.0.3"
+    "sepia": "~1.0.3",
+    "sepia-js": "git://github.com/philschatz/sepia.js",
   },
   "repository": {
     "type": "git",
