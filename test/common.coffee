@@ -156,6 +156,15 @@ makeTests = (assert, expect, base64encode, Octokit) ->
     itIsArray(GH, 'issues.fetch')
 
 
+    describe 'Paged Results', () ->
+
+      it "#{GH}.gists.public.fetch().then(results) -> results.nextPage()", (done) ->
+        trapFail(STATE[GH].gists.public.fetch())
+        .then (results) ->
+          results.nextPage()
+          .then (moreResults) ->
+            done()
+
     describe "#{REPO} = #{GH}.repos(OWNER, NAME)", () ->
 
       before () ->

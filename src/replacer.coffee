@@ -30,7 +30,11 @@ define 'octokit-part/replacer', ['cs!octokit-part/plus'], (plus) ->
       acc
 
     _replaceArray: (orig) ->
-      return (@replace(item) for item in orig)
+      arr = (@replace(item) for item in orig)
+      # Convert the nextPage methods for paged results
+      for key, value of orig
+        @_replaceKeyValue(arr, key, value) if typeof key is 'string'
+      arr
 
     # Convert things that end in `_url` to methods which return a Promise
     _replaceKeyValue: (acc, key, value) ->
