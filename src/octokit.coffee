@@ -17,6 +17,7 @@ define 'octokit', [
     'gitignore'
     'meta'
     'rate_limit'
+    'feeds'
   ]
 
   Octokit = (clientOptions={}) ->
