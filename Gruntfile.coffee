@@ -88,6 +88,20 @@ module.exports = (grunt) ->
         reporter: 'Dot'
 
 
+
+    mocha_phantomjs:
+      all:
+        options:
+          urls: [ 'http://localhost:9876/test/index.html' ]
+
+    connect:
+      server:
+        options:
+          port: 9876
+          base: '.'
+
+
+
   # Dependencies
   # ============
   for name of pkg.dependencies when name.substring(0, 6) is 'grunt-'
@@ -103,6 +117,8 @@ module.exports = (grunt) ->
   # -----
   grunt.registerTask 'test', [
     'mochaTest'
+    'connect'
+    'mocha_phantomjs'
     #'blanket_mocha' NOTE: Uncomment once the `suiteURL` problem noted above is fixed
   ]
 

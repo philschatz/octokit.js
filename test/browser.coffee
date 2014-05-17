@@ -15,4 +15,8 @@ require ['cs!octokit'], (Octokit) ->
 
   # Needs to run once this file is loaded
   window.sepia.start();
-  mocha.run()
+
+  if window.mochaPhantomJS
+    mochaPhantomJS.run()
+  else
+    mocha.run()

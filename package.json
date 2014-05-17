@@ -36,6 +36,8 @@
     "blanket": "~1.1.5",
     "sepia": "~1.0.3",
     "sepia-js": "git://github.com/philschatz/sepia.js",
+    "grunt-mocha-phantomjs": "~0.5.0",
+    "grunt-contrib-connect": "~0.7.1"
   },
   "repository": {
     "type": "git",

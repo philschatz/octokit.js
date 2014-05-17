@@ -5,14 +5,15 @@ define 'octokit-part/request', [
 ], (
   {newPromise, allPromises}, base64encode) ->
 
-  # Use the browser XMLHttpRequest if it exists. If not, then this is NodeJS
-  XMLHttpRequest = window?.XMLHttpRequest or require('xmlhttprequest').XMLHttpRequest
-
   userAgent = 'octokit' if module?
 
   # Simple jQuery.ajax() shim that returns a promise for a xhr object
   ajax = (options) ->
     return newPromise (resolve, reject) ->
+
+      # Use the browser XMLHttpRequest if it exists. If not, then this is NodeJS
+      # Pull this in for every request so sepia.js has a chance to override `window.XMLHTTPRequest`
+      XMLHttpRequest = window?.XMLHttpRequest or require('xmlhttprequest').XMLHttpRequest
 
       xhr = new XMLHttpRequest()
       xhr.dataType = options.dataType
