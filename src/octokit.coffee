@@ -1,24 +1,14 @@
 define = window?.define or (name, deps, cb) -> cb (require(dep.replace('cs!octokit-part/', './')) for dep in deps)...
 define 'octokit', [
   'cs!octokit-part/plus'
+  'cs!octokit-part/grammar'
   'cs!octokit-part/batcher'
   'cs!octokit-part/replacer'
   'cs!octokit-part/request'
   'cs!octokit-part/helper-promise'
-], (plus, Batcher, Replacer, Request, {newPromise, allPromises}) ->
+], (plus, {TREE_OPTIONS, OBJECT_MATCHER}, Batcher, Replacer, Request, {newPromise, allPromises}) ->
 
   # Combine all the classes into one client
-
-  ROOT_NOUNS = [
-    'zen'
-    'search'
-    'emojis'
-    'markdown'
-    'gitignore'
-    'meta'
-    'rate_limit'
-    'feeds'
-  ]
 
   Octokit = (clientOptions={}) ->
 
@@ -34,21 +24,17 @@ define 'octokit', [
       .then (val) ->
         return val if options.raw
         obj = replacer.replace(val)
-        Batcher(request, obj.url, obj)
+        for key, re of OBJECT_MATCHER
+          Batcher(request, obj.url, TREE_OPTIONS[key], obj) if re.test(obj.url)
         return obj
 
     path = ''
     obj = {}
-    Batcher(request, path, obj)
+    Batcher(request, path, TREE_OPTIONS, obj)
 
     # Special case for `me`
-    obj.__defineGetter__ 'me', () ->
-      return Batcher(request, "#{path}/user")
-
-    for noun in ROOT_NOUNS
-      do (noun) ->
-        obj.__defineGetter__ plus.camelize(noun), () ->
-          return Batcher(request, "#{path}/#{noun}")
+    obj.me = obj.user
+    delete obj.user
 
 
     return obj
