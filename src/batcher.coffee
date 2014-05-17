@@ -38,7 +38,11 @@ define 'octokit-part/batcher', ['cs!octokit-part/plus'], (plus) ->
     'teams'
     # Repo
     'laguages'
+
+    # From https://developer.github.com/v3/repos/releases/
     'releases'
+    'assets'
+
     'stargazers'
     'forks'
     'pulls'
