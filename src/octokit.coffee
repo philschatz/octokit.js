@@ -1,12 +1,23 @@
 define = window?.define or (name, deps, cb) -> cb (require(dep.replace('cs!octokit-part/', './')) for dep in deps)...
 define 'octokit', [
+  'cs!octokit-part/plus'
   'cs!octokit-part/batcher'
   'cs!octokit-part/replacer'
   'cs!octokit-part/request'
   'cs!octokit-part/helper-promise'
-], (Batcher, Replacer, Request, {newPromise, allPromises}) ->
+], (plus, Batcher, Replacer, Request, {newPromise, allPromises}) ->
 
   # Combine all the classes into one client
+
+  ROOT_NOUNS = [
+    'zen'
+    'search'
+    'emojis'
+    'markdown'
+    'gitignore'
+    'meta'
+    'rate_limit'
+  ]
 
   Octokit = (clientOptions={}) ->
 
@@ -32,6 +43,12 @@ define 'octokit', [
     # Special case for `me`
     obj.__defineGetter__ 'me', () ->
       return Batcher(request, "#{path}/user")
+
+    for noun in ROOT_NOUNS
+      do (noun) ->
+        obj.__defineGetter__ plus.camelize(noun), () ->
+          return Batcher(request, "#{path}/#{noun}")
+
 
     return obj
 

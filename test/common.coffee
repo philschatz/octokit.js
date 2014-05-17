@@ -131,7 +131,15 @@ makeTests = (assert, expect, base64encode, Octokit) ->
 
       STATE[GH] = new Octokit(options)
 
-    itIsOk(GH, 'zen.read')
+    describe 'Miscellaneous APIs', () ->
+      itIsOk(GH, 'zen.read')
+      itIsOk(GH, 'emojis.fetch')
+      itIsOk(GH, 'gitignore.templates.fetch')
+      itIsOk(GH, 'gitignore.templates', 'C', 'read')
+      # itIsOk(GH, 'markdown.create', [{text:'# Hello There'}, true])
+      itIsOk(GH, 'meta.fetch')
+      itIsOk(GH, 'rateLimit.fetch')
+
     itIsArray(GH, 'users.fetch')
     itIsArray(GH, 'gists.public.fetch')
     # itIsArray(GH, 'global.events')

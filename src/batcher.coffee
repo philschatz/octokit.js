@@ -16,8 +16,6 @@ define 'octokit-part/batcher', ['cs!octokit-part/plus'], (plus) ->
 
   ALL_NOUNS = [
     # Global
-    'zen'
-    'search'
     'repositories'
     'code'
     'users'
@@ -69,6 +67,11 @@ define 'octokit-part/batcher', ['cs!octokit-part/plus'], (plus) ->
 
     # Gist
     'star'
+
+    # From the global
+    'templates' # for /gitignore/templates
+    'raw'       # for /markdown/raw
+
   ]
 
   Batcher = (request, path, fn) ->
@@ -85,7 +88,7 @@ define 'octokit-part/batcher', ['cs!octokit-part/plus'], (plus) ->
     fn.read         = () ->         request('GET', path, null, raw:true)
     fn.readBinary   = () ->         request('GET', path, null, raw:true, isBase64:true)
     fn.remove       = () ->         request('DELETE', path, null, isBoolean:true)
-    fn.create       = (config) ->   request('POST', path, config)
+    fn.create       = (config, isRaw) ->   request('POST', path, config, raw:isRaw)
     fn.update       = (config) ->   request('PATCH', path, config)
     fn.add          = (args...) ->  request('PUT', path, null, isBoolean:true)
     fn.contains     = (args...) ->  request('GET', "#{path}/#{args.join('/')}", null, isBoolean:true)
