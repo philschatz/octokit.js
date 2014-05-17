@@ -1,21 +1,19 @@
 define = window?.define or (name, deps, cb) -> cb (require(dep.replace('cs!octokit-part/', './')) for dep in deps)...
-define 'octokit-part/replacer', [
-  'cs!octokit-part/types'
-], (types) ->
-
-  # require('underscore-plus')
-  plus =
-    camelize: (string) ->
-      if string
-        string.replace /[_-]+(\w)/g, (m) -> m[1].toUpperCase()
-      else
-        ''
-
-
-  TESTABLE_TYPES = (val for key, val of types)
+define 'octokit-part/replacer', ['cs!octokit-part/plus'], (plus) ->
 
   class Replacer
     constructor: (@_request) ->
+
+    dasherize: (obj) ->
+      if Array.isArray(obj)
+        return (@dasherize(i) for i in obj)
+      else if obj == Object(obj)
+        o = {}
+        for key, value of obj
+          o[plus.dasherize(key)] = @dasherize(value)
+        return o
+      else
+        return obj
 
     replace: (o) ->
       if Array.isArray(o)
@@ -29,9 +27,6 @@ define 'octokit-part/replacer', [
       acc = {}
       for key, value of orig
         @_replaceKeyValue(acc, key, value)
-
-      for Type in TESTABLE_TYPES
-        return new Type(@_request, acc) if Type::_test(acc)
       acc
 
     _replaceArray: (orig) ->

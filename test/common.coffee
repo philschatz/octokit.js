@@ -1,4 +1,4 @@
-makeTests = (assert, expect, btoa, Octokit) ->
+makeTests = (assert, expect, base64encode, Octokit) ->
 
   USERNAME = 'octokit-test'
   TOKEN = 'dca7f85a5911df8e9b7aeb4c5be8f5f50806ac49'
@@ -68,40 +68,57 @@ makeTests = (assert, expect, btoa, Octokit) ->
   describe "#{GH} = new Octokit({token: ...})", () ->
     @timeout(LONG_TIMEOUT)
 
-    stringifyAry = (args...) ->
+    stringifyAry = (args) ->
+      args = [args] unless Array.isArray(args)
       return '' if not args.length
       arr = (JSON.stringify(arg) for arg in args)
       return arr.join(', ')
 
-    itIs = (obj, funcNames, args, cb) ->
-      it "#{obj}.#{funcNames}(#{stringifyAry(args...)})", (done) ->
-        names = funcNames.split('.')
+    itIs = (obj, msg, args, cb) ->
+      code = ''
+      isFuncArgs = false
+      for arg in args
+        if isFuncArgs
+          code += "(#{stringifyAry(arg)})"
+        else
+          code += '.' + arg
+
+        isFuncArgs = !isFuncArgs
+
+      code += '()' if isFuncArgs
+
+
+      it "#{obj}#{code}", (done) ->
         context = STATE[obj]
-        for field in names
-          context = context[field]
-        helper1 done, context(args...), cb
+        isFuncArgs = false # Every other arg is a function arg
+        for arg in args
+          if isFuncArgs
+            arg = [arg] unless Array.isArray(arg)
+            context = context(arg...)
+          else
+            names = arg.split('.')
+            for field in names
+              context = context[field]
+
+          isFuncArgs = !isFuncArgs
+
+        # If the last arg was something like 'fetch' then
+        if isFuncArgs
+          helper1 done, context(), cb
+        else
+          helper1 done, context, cb
 
 
-    itIsOk = (obj, funcNames, args...) ->
-      itIs obj, funcNames, args, (val) -> expect(val).to.be.ok
+    itIsOk = (obj, args...) ->
+      itIs obj, '', args, (val) -> expect(val).to.be.ok
 
-    itIsArray = (obj, funcNames, args...) ->
-      it "#{obj}.#{funcNames}(#{stringifyAry(args...)}) yields Array", (done) ->
-        names = funcNames.split('.')
-        context = STATE[obj]
-        for field in names
-          context = context[field]
-        helper1 done, context(args...), (val) ->
-          expect(val).to.be.an.array
+    itIsArray = (obj, args...) ->
+      itIs obj, ' yields Array', args, (val) ->
+        expect(val).to.be.an.array
 
-    itIsFalse = (obj, funcNames, args...) ->
-      it "#{obj}.#{funcNames}(#{stringifyAry(args...)}) yields false", (done) ->
-        names = funcNames.split('.')
-        context = STATE[obj]
-        for field in names
-          context = context[field]
-        helper1 done, context(args...), (val) ->
-          expect(val).to.be.false
+    itIsFalse = (obj, args...) ->
+      itIs obj, ' yields False', args, (val) ->
+        expect(val).to.be.false
 
     before () ->
       options =
@@ -114,84 +131,82 @@ makeTests = (assert, expect, btoa, Octokit) ->
 
       STATE[GH] = new Octokit(options)
 
-    itIsOk(GH, 'global.zen')
-    itIsArray(GH, 'global.users')
-    itIsArray(GH, 'global.gists')
+    itIsOk(GH, 'zen.read')
+    itIsArray(GH, 'users.fetch')
+    itIsArray(GH, 'gists.public.fetch')
     # itIsArray(GH, 'global.events')
     # itIsArray(GH, 'global.notifications')
 
-    itIsArray(GH, 'search.repos', {q:'github'})
-    # itIsArray(GH, 'search.code', {q:'github'})
-    itIsArray(GH, 'search.issues', {q:'github'})
-    itIsArray(GH, 'search.users', {q:'github'})
+    itIsArray(GH, 'search.repositories.fetch', {q:'github'})
+    # itIsArray(GH, 'search.code.fetch', {q:'github'})
+    itIsArray(GH, 'search.issues.fetch', {q:'github'})
+    itIsArray(GH, 'search.users.fetch', {q:'github'})
 
-    itIsOk(GH, 'user', REPO_USER)
-    itIsOk(GH, 'org', ORG_NAME)
-    itIsOk(GH, 'repo', REPO_USER, REPO_NAME)
-    itIsArray(GH, 'issues')
-    itIsArray(GH, 'gists.all')
+    itIsOk(GH, 'users', REPO_USER, 'fetch')
+    itIsOk(GH, 'orgs', ORG_NAME, 'fetch')
+    itIsOk(GH, 'repos', [REPO_USER, REPO_NAME], 'fetch')
+    itIsArray(GH, 'issues.fetch')
 
 
-    describe "#{GH}.repo(OWNER, NAME).then (#{REPO}) -> ...", () ->
+    describe "#{REPO} = #{GH}.repos(OWNER, NAME)", () ->
 
-      before (done) ->
-        STATE[GH].repo(REPO_USER, REPO_NAME)
-        .then (repo) ->
-          STATE[REPO] = repo
-          done()
+      before () ->
+        STATE[REPO] = STATE[GH].repos(REPO_USER, REPO_NAME)
+
+      itIsOk(REPO, 'fetch')
 
       # Accessors for methods generated from URL patterns
-      itIsArray(REPO, 'collaborators.all')
-      itIsArray(REPO, 'hooks.all')
-      itIsArray(REPO, 'assignees.all')
-      itIsArray(REPO, 'branches')
-      itIsArray(REPO, 'contributors')
-      itIsArray(REPO, 'subscribers')
-      itIsArray(REPO, 'subscription')
-      itIsArray(REPO, 'comments')
-      itIsArray(REPO, 'downloads')
-      itIsArray(REPO, 'milestones')
-      itIsArray(REPO, 'labels')
-      # itIsArray(REPO, 'stargazers')
-      itIsArray(REPO, 'issues.all')
-      itIsArray(REPO, 'issues.events')
-      itIsArray(REPO, 'issues.comments.all')
-      # itIsArray(REPO, 'issues.comments.one', commentId)
+      itIsArray(REPO, 'collaborators.fetch')
+      itIsArray(REPO, 'hooks.fetch')
+      itIsArray(REPO, 'assignees.fetch')
+      itIsArray(REPO, 'branches.fetch')
+      itIsArray(REPO, 'contributors.fetch')
+      itIsArray(REPO, 'subscribers.fetch')
+      itIsArray(REPO, 'subscription.fetch')
+      itIsArray(REPO, 'comments.fetch')
+      itIsArray(REPO, 'downloads.fetch')
+      itIsArray(REPO, 'milestones.fetch')
+      itIsArray(REPO, 'labels.fetch')
+      # itIsArray(REPO, 'stargazers.fetch')
+      itIsArray(REPO, 'issues.fetch')
+      itIsArray(REPO, 'issues.events.fetch')
+      itIsArray(REPO, 'issues.comments.fetch')
+      # itIsArray(REPO, 'issues.comments', commentId, 'fetch')
 
       itIsOk(REPO, 'issues.create', {title: 'Test Issue'})
-      itIsOk(REPO, 'issues.one', 1)
+      itIsOk(REPO, 'issues', 1, 'fetch')
 
       describe "#{REPO}.git... (Git Data)", () ->
 
-        itIsArray(REPO, 'git.refs.all')
-        # itIsArray(REPO, 'git.refs.tags.all')    This repo does not have any tags: TODO: create a tag
-        itIsArray(REPO, 'git.refs.heads.all')
+        itIsArray(REPO, 'git.refs.fetch')
+        # itIsArray(REPO, 'git.refs.tags.fetch')    This repo does not have any tags: TODO: create a tag
+        itIsArray(REPO, 'git.refs.heads.fetch')
 
         # itIsOk(REPO, 'git.tags.create', {tag:'test-tag', message:'Test tag for units', ...})
         # itIsOk(REPO, 'git.tags.one', 'test-tag')
-        itIsOk(REPO, 'git.trees.one', 'c18ba7dc333132c035a980153eb520db6e813d57')
+        itIsOk(REPO, 'git.trees', 'c18ba7dc333132c035a980153eb520db6e813d57', 'fetch')
         # itIsOk(REPO, 'git.trees.create', {tree: [sha], base_tree: sha})
 
 
-        it '.git.blobs.create("Hello")   and .blobs.one(sha)', (done) ->
-          STATE[REPO].git.blobs.create('Hello')
+        it '.git.blobs.create("Hello")   and .blobs(sha).read()', (done) ->
+          STATE[REPO].git.blobs.create({content:'Hello', encoding:'utf-8'})
           .then ({sha}) ->
             expect(sha).to.be.ok
-            STATE[REPO].git.blobs.one(sha)
+            STATE[REPO].git.blobs(sha).read()
             .then (v) ->
               expect(v).to.equal('Hello')
               done()
 
-        it '.git.blobs.create(..., true) and .blobs.one(..., true) (binary flag)', (done) ->
-          STATE[REPO].git.blobs.create('Hello', true)
+        it '.git.blobs.create(...) and .blobs(...).readBinary()', (done) ->
+          STATE[REPO].git.blobs.create({content:base64encode('Hello'), encoding: 'base64'})
           .then ({sha}) ->
             expect(sha).to.be.ok
-            STATE[REPO].git.blobs.one(sha, true)
+            STATE[REPO].git.blobs(sha).readBinary()
             .then (v) ->
               expect(v).to.have.string('Hello')
 
               done()
-              # Make sure the library does not just ignore the isBinary flag
+              # Make sure the library does not just ignore the isBase64 flag
               # TODO: This is commented because caching is only based on the path, not the flags (or the verb)
               # STATE[REPO].git.blobs.one(sha)
               # .then (v) ->
@@ -202,53 +217,49 @@ makeTests = (assert, expect, btoa, Octokit) ->
 
       describe 'Collaborator changes', () ->
         it 'gets a list of collaborators', (done) ->
-          trapFail(STATE[REPO].collaborators.all())
+          trapFail(STATE[REPO].collaborators.fetch())
           .then (v) -> expect(v).to.be.an.array; done()
 
         it 'tests membership', (done) ->
-          trapFail(STATE[REPO].collaborators.is(REPO_USER))
+          trapFail(STATE[REPO].collaborators.contains(REPO_USER))
           .then (v) -> expect(v).to.be.true; done()
 
         it 'adds and removes a collaborator', (done) ->
-          trapFail(STATE[REPO].collaborators.add(OTHER_USERNAME))
+          trapFail(STATE[REPO].collaborators(OTHER_USERNAME).add())
           .then (v) ->
             expect(v).to.be.ok
-            trapFail(STATE[REPO].collaborators.remove(OTHER_USERNAME))
+            trapFail(STATE[REPO].collaborators(OTHER_USERNAME).remove())
             .then (v) ->
               expect(v).to.be.true
               done()
 
 
-    describe "#{GH}.user(USERNAME).then (#{USER}) -> ...", () ->
+    describe "#{USER} = #{GH}.users(USERNAME)", () ->
 
-      before (done) ->
-        STATE[GH].user(USERNAME)
-        .then (v) ->
-          STATE[USER] = v
-          done()
+      before () ->
+        STATE[USER] = STATE[GH].users(USERNAME)
 
-      itIsArray(USER, 'repos')
-      itIsArray(USER, 'orgs')
-      itIsArray(USER, 'gists')
-      itIsArray(USER, 'followers')
-      itIsArray(USER, 'following.all')
-      itIsFalse(USER, 'following.is', 'defunkt')
-      itIsArray(USER, 'keys')
-      itIsArray(USER, 'events')
-      itIsArray(USER, 'receivedEvents')
+      itIsOk(USER, 'fetch')
+      itIsArray(USER, 'repos.fetch')
+      itIsArray(USER, 'orgs.fetch')
+      itIsArray(USER, 'gists.fetch')
+      itIsArray(USER, 'followers.fetch')
+      itIsArray(USER, 'following.fetch')
+      itIsFalse(USER, 'following.contains', 'defunkt')
+      itIsArray(USER, 'keys.fetch')
+      itIsArray(USER, 'events.fetch')
+      itIsArray(USER, 'receivedEvents.fetch')
 
 
-    describe "#{GH}.org(ORG_NAME).then (#{ORG}) -> ...", () ->
+    describe "#{ORG} = #{GH}.orgs(ORG_NAME)", () ->
 
-      before (done) ->
-        STATE[GH].org(ORG_NAME)
-        .then (v) ->
-          STATE[ORG] = v
-          done()
+      before () ->
+        STATE[ORG] = STATE[GH].orgs(ORG_NAME)
 
-      itIsArray(ORG, 'members.all')
-      itIsArray(ORG, 'repos.all')
-      itIsArray(ORG, 'issues')
+      itIsArray(ORG, 'fetch')
+      itIsArray(ORG, 'members.fetch')
+      itIsArray(ORG, 'repos.fetch')
+      itIsArray(ORG, 'issues.fetch')
 
 
     describe "#{ME} = #{GH}.me (the authenticated user)", () ->
@@ -256,17 +267,19 @@ makeTests = (assert, expect, btoa, Octokit) ->
       before () ->
         STATE[ME] = STATE[GH].me
 
-      itIsArray(ME, 'repos')
-      itIsArray(ME, 'orgs')
-      itIsArray(ME, 'followers')
-      itIsArray(ME, 'following.all')
-      itIsFalse(ME, 'following.is', 'defunkt')
-      itIsArray(ME, 'emails.all')
-      itIsFalse(ME, 'emails.is', 'invalid@email.com')
+      # itIsOk(ME, 'fetch')
+
+      itIsArray(ME, 'repos.fetch')
+      itIsArray(ME, 'orgs.fetch')
+      itIsArray(ME, 'followers.fetch')
+      itIsArray(ME, 'following.fetch')
+      itIsFalse(ME, 'following.contains', 'defunkt')
+      itIsArray(ME, 'emails.fetch')
+      itIsFalse(ME, 'emails.contains', 'invalid@email.com')
       # itIsArray(ME, 'keys.all')
       # itIsFalse(ME, 'keys.is', 'invalid-key')
 
-      itIsArray(ME, 'issues')
+      itIsArray(ME, 'issues.fetch')
 
       # itIsArray(ME, 'starred.all') Not enough permission
 
@@ -274,18 +287,18 @@ makeTests = (assert, expect, btoa, Octokit) ->
       describe 'Multistep operations', () ->
 
         it '.starred.add(OWNER, REPO), .starred.is(...), and then .starred.remove(...)', (done) ->
-          trapFail(STATE[ME].starred.add(REPO_USER, REPO_NAME))
+          trapFail(STATE[ME].starred(REPO_USER, REPO_NAME).add())
           .then () ->
-            STATE[ME].starred.is(REPO_USER, REPO_NAME)
+            STATE[ME].starred.contains(REPO_USER, REPO_NAME)
             .then (isStarred) ->
               expect(isStarred).to.be.true
-              STATE[ME].starred.remove(REPO_USER, REPO_NAME)
+              STATE[ME].starred(REPO_USER, REPO_NAME).remove()
               .then (v) ->
                 expect(v).to.be.true
                 done()
 
 
-    describe "#{GH}.gist(GIST_ID).then (#{GIST}) -> ...", () ->
+    describe "#{GIST} = #{GH}.gist(GIST_ID)", () ->
 
       before (done) ->
 
@@ -302,35 +315,35 @@ makeTests = (assert, expect, btoa, Octokit) ->
           STATE[GIST] = gist
           done()
 
+      # itIsOk(GIST, 'fetch')
+
       # itIsArray(GIST, 'forks.all')
       it 'can be .starred.add() and .starred.remove()', (done) ->
-        STATE[GIST].starred.add()
+        STATE[GIST].star.add()
         .then () ->
-          STATE[GIST].starred.remove()
+          STATE[GIST].star.remove()
           .then () ->
             done()
 
 
 
-    describe 'issue (Issues in a Repository)', (done) ->
-      before (done) ->
-        STATE[REPO].issues.one(1)
-        .then (issue) ->
-          STATE[ISSUE] = issue
-          done()
+    describe "#{ISSUE} = #{REPO}.issues(1)", () ->
+      before () ->
+        STATE[ISSUE] = STATE[REPO].issues(1)
 
+      itIsOk(ISSUE, 'fetch')
       itIsOk(ISSUE, 'update', {title: 'New Title', state: 'closed'})
 
       describe 'Comment methods (Some are on the repo, issue, or comment)', () ->
 
-        itIsArray(ISSUE, 'comments.all')
+        itIsArray(ISSUE, 'comments.fetch')
         itIsOk(ISSUE, 'comments.create', {body: 'Test comment'})
         # NOTE: Comment updating is awkward because it's on the repo, not a specific issue.
         # itIsOk(REPO, 'issues.comments.update', 43218269, {body: 'Test comment updated'})
-        itIsOk(REPO, 'issues.comments.one', 43218269)
+        itIsOk(REPO, 'issues.comments', 43218269, 'fetch')
 
         it 'comment.issue()', (done) ->
-          trapFail(STATE[REPO].issues.comments.one(43218269))
+          trapFail(STATE[REPO].issues.comments(43218269).fetch())
           .then (comment) ->
             comment.issue()
             .then (v) ->

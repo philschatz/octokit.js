@@ -1,10 +1,10 @@
 define = window?.define or (name, deps, cb) -> cb (require(dep.replace('cs!octokit-part/', './')) for dep in deps)...
 define 'octokit', [
+  'cs!octokit-part/batcher'
   'cs!octokit-part/replacer'
   'cs!octokit-part/request'
-  'cs!octokit-part/types'
   'cs!octokit-part/helper-promise'
-], (Replacer, Request, {Me}, {newPromise, allPromises}) ->
+], (Batcher, Replacer, Request, {newPromise, allPromises}) ->
 
   # Combine all the classes into one client
 
@@ -14,53 +14,26 @@ define 'octokit', [
     _request = Request(clientOptions)
 
     request = (method, path, data, options={raw:false, isBase64:false, isBoolean:false}) ->
-
       replacer = new Replacer(request)
 
-      return _request(arguments...)
+      data = replacer.dasherize(data) if data
+
+      return _request(method, path, data, options)
       .then (val) ->
         return val if options.raw
-        return replacer.replace(val)
+        obj = replacer.replace(val)
+        Batcher(request, obj.url, obj)
+        return obj
 
-    # Converts a dictionary to a query string.
-    # Internal helper method
-    toQueryString = (options) ->
+    path = ''
+    obj = {}
+    Batcher(request, path, obj)
 
-      # Returns '' if `options` is empty so this string can always be appended to a URL
-      return '' if not options or options is {}
+    # Special case for `me`
+    obj.__defineGetter__ 'me', () ->
+      return Batcher(request, "#{path}/user")
 
-      params = []
-      for key, value of options or {}
-        params.push "#{key}=#{encodeURIComponent(value)}"
-      return "?#{params.join('&')}"
-
-
-    global:
-      zen: () -> request('GET', '/zen', null, raw:true)
-      users: (config) -> request('GET', '/users', config)
-      gists: (config) -> request('GET', '/gists/public', config)
-      events: (config) -> request('GET', '/events', config)
-      notifications: (config) -> request('GET', '/notifications', config)
-
-    search:
-      repos:  (config) -> request('GET', "/search/repositories#{toQueryString(config)}")
-      code:   (config) -> request('GET', "/search/code#{toQueryString(config)}")
-      issues: (config) -> request('GET', "/search/issues#{toQueryString(config)}")
-      users:  (config) -> request('GET', "/search/users#{toQueryString(config)}")
-
-    me: new Me(request)
-    user: (id) -> request('GET', "/users/#{id}")
-    team: (id) -> request('GET', "/teams/#{id}")
-    org:  (id) -> request('GET', "/orgs/#{id}")
-    repo: (user, name) -> request('GET', "/repos/#{user}/#{name}")
-    gist: (id) -> request('GET', "/gists/#{id}")
-
-    gists:
-      all: () -> request('GET', '/gists/public')
-      create: (options) -> request('POST', '/gists', options)
-
-    issues: (config) -> request('GET', '/issues', config)
-
+    return obj
 
 
   module?.exports = Octokit
