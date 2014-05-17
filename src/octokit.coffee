@@ -2,11 +2,11 @@ define = window?.define or (name, deps, cb) -> cb (require(dep.replace('cs!octok
 define 'octokit', [
   'cs!octokit-part/plus'
   'cs!octokit-part/grammar'
-  'cs!octokit-part/batcher'
+  'cs!octokit-part/chainer'
   'cs!octokit-part/replacer'
   'cs!octokit-part/request'
   'cs!octokit-part/helper-promise'
-], (plus, {TREE_OPTIONS, OBJECT_MATCHER}, Batcher, Replacer, Request, {newPromise, allPromises}) ->
+], (plus, {TREE_OPTIONS, OBJECT_MATCHER}, Chainer, Replacer, Request, {newPromise, allPromises}) ->
 
   # Combine all the classes into one client
 
@@ -25,12 +25,12 @@ define 'octokit', [
         return val if options.raw
         obj = replacer.replace(val)
         for key, re of OBJECT_MATCHER
-          Batcher(request, obj.url, TREE_OPTIONS[key], obj) if re.test(obj.url)
+          Chainer(request, obj.url, TREE_OPTIONS[key], obj) if re.test(obj.url)
         return obj
 
     path = ''
     obj = {}
-    Batcher(request, path, TREE_OPTIONS, obj)
+    Chainer(request, path, TREE_OPTIONS, obj)
 
     # Special case for `me`
     obj.me = obj.user

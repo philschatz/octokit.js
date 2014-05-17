@@ -1,5 +1,5 @@
 define = window?.define or (name, deps, cb) -> cb (require(dep.replace('cs!octokit-part/', './')) for dep in deps)...
-define 'octokit-part/batcher', [
+define 'octokit-part/chainer', [
   'cs!octokit-part/grammar'
   'cs!octokit-part/plus'
 ], ({TREE_OPTIONS, OBJECT_MATCHER, URL_VALIDATOR}, plus) ->
@@ -17,15 +17,15 @@ define 'octokit-part/batcher', [
     return "?#{params.join('&')}"
 
 
-  Batcher = (request, path, contextTree, fn) ->
+  Chainer = (request, path, contextTree, fn) ->
     fn ?= (args...) ->
       throw new Error('BUG! must be called with at least one argument') unless args.length
-      return Batcher(request, "#{path}/#{args.join('/')}", contextTree)
+      return Chainer(request, "#{path}/#{args.join('/')}", contextTree)
 
     for name of contextTree or {}
       do (name) ->
         fn.__defineGetter__ plus.camelize(name), () ->
-          return Batcher(request, "#{path}/#{name}", contextTree[name])
+          return Chainer(request, "#{path}/#{name}", contextTree[name])
 
     # Test if the path is constructed correctly
     tester = (path) ->
@@ -45,5 +45,5 @@ define 'octokit-part/batcher', [
     return fn
 
 
-  module?.exports = Batcher
-  return Batcher
+  module?.exports = Chainer
+  return Chainer
