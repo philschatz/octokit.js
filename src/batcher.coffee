@@ -43,6 +43,14 @@ define 'octokit-part/batcher', ['cs!octokit-part/plus'], (plus) ->
     'releases'
     'assets'
 
+    # From https://developer.github.com/v3/repos/statistics/
+    'stats'
+    'commit_activity'
+    'code_frequency'
+    'participation'
+    'punch_card'
+
+
     'stargazers'
     'forks'
     'pulls'

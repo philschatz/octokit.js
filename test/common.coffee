@@ -186,17 +186,26 @@ makeTests = (assert, expect, base64encode, Octokit) ->
       itIsArray(REPO, 'milestones.fetch')
       itIsArray(REPO, 'labels.fetch')
       # itIsArray(REPO, 'stargazers.fetch')
-      itIsArray(REPO, 'issues.fetch')
-      itIsArray(REPO, 'issues.events.fetch')
-      itIsArray(REPO, 'issues.comments.fetch')
-      # itIsArray(REPO, 'issues.comments', commentId, 'fetch')
 
-      itIsOk(REPO, 'issues.create', {title: 'Test Issue'})
-      itIsOk(REPO, 'issues', 1, 'fetch')
+      describe "#{REPO}.issues...", () ->
+        itIsArray(REPO, 'issues.fetch')
+        itIsArray(REPO, 'issues.events.fetch')
+        itIsArray(REPO, 'issues.comments.fetch')
+        # itIsArray(REPO, 'issues.comments', commentId, 'fetch')
+
+        itIsOk(REPO, 'issues.create', {title: 'Test Issue'})
+        itIsOk(REPO, 'issues', 1, 'fetch')
 
       # itIsOk(REPO, 'pages.fetch')
       # itIsOk(REPO, 'pages.builds.fetch')
       # itIsOk(REPO, 'pages.builds.latest.fetch')
+
+      describe "#{REPO}.stats...", () ->
+        itIsOk(REPO, 'stats.contributors.fetch')
+        itIsOk(REPO, 'stats.commitActivity.fetch')
+        itIsOk(REPO, 'stats.codeFrequency.fetch')
+        itIsOk(REPO, 'stats.participation.fetch')
+        itIsOk(REPO, 'stats.punchCard.fetch')
 
       describe "#{REPO}.git... (Git Data)", () ->
 
