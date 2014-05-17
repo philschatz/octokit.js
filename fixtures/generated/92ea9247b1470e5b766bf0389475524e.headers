@@ -1,0 +1,38 @@
+{
+  "statusCode": 204,
+  "headers": {
+    "server": "GitHub.com",
+    "date": "Sat, 17 May 2014 18:13:32 GMT",
+    "connection": "close",
+    "status": "204 No Content",
+    "x-ratelimit-limit": "5000",
+    "x-ratelimit-remaining": "4861",
+    "x-ratelimit-reset": "1400353465",
+    "x-oauth-scopes": "gist, repo, user",
+    "x-accepted-oauth-scopes": "",
+    "x-github-media-type": "github.v3; param=raw",
+    "x-xss-protection": "1; mode=block",
+    "x-frame-options": "deny",
+    "content-security-policy": "default-src 'none'",
+    "access-control-allow-credentials": "true",
+    "access-control-expose-headers": "ETag, Link, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval",
+    "access-control-allow-origin": "*",
+    "x-github-request-id": "17757AFA:303F:5550612:5377A6CC",
+    "strict-transport-security": "max-age=31536000",
+    "x-content-type-options": "nosniff",
+    "vary": "Accept-Encoding",
+    "x-served-by": "132026e9262a0093e437f99db5f1e499"
+  },
+  "url": "https://api.github.com:443/user/starred/octokit-test/octokit-test-repo",
+  "time": 332,
+  "request": {
+    "method": "DELETE",
+    "headers": {
+      "User-Agent": "octokit",
+      "Accept": "application/vnd.github.raw",
+      "If-Modified-Since": "Thu, 01 Jan 1970 00:00:00 GMT",
+      "Authorization": "token dca7f85a5911df8e9b7aeb4c5be8f5f50806ac49",
+      "Host": "api.github.com"
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "statusCode": 200,
+  "headers": {
+    "server": "GitHub.com",
+    "date": "Sat, 17 May 2014 18:13:29 GMT",
+    "content-type": "application/json; charset=utf-8",
+    "connection": "close",
+    "status": "200 OK",
+    "x-ratelimit-limit": "5000",
+    "x-ratelimit-remaining": "4872",
+    "x-ratelimit-reset": "1400353465",
+    "cache-control": "private, max-age=60, s-maxage=60",
+    "etag": "\"9443281d3c4880565d805eeb40606895\"",
+    "x-oauth-scopes": "gist, repo, user",
+    "x-accepted-oauth-scopes": "",
+    "vary": "Accept, Authorization, Cookie, X-GitHub-OTP",
+    "x-github-media-type": "github.v3; param=raw",
+    "link": "<https://api.github.com/organizations/6076387/issues?page=0>; rel=\"last\"",
+    "x-xss-protection": "1; mode=block",
+    "x-frame-options": "deny",
+    "content-security-policy": "default-src 'none'",
+    "content-length": "2",
+    "access-control-allow-credentials": "true",
+    "access-control-expose-headers": "ETag, Link, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval",
+    "access-control-allow-origin": "*",
+    "x-github-request-id": "17757AFA:3040:68AAD30:5377A6C9",
+    "strict-transport-security": "max-age=31536000",
+    "x-content-type-options": "nosniff",
+    "x-served-by": "d818ddef80f4c7d10683dd483558952a"
+  },
+  "url": "https://api.github.com:443/orgs/octokit-test-org/issues",
+  "time": 269,
+  "request": {
+    "method": "GET",
+    "headers": {
+      "User-Agent": "octokit",
+      "Accept": "application/vnd.github.raw",
+      "If-Modified-Since": "Thu, 01 Jan 1970 00:00:00 GMT",
+      "Authorization": "token dca7f85a5911df8e9b7aeb4c5be8f5f50806ac49",
+      "Host": "api.github.com"
+    }
+  }
+}

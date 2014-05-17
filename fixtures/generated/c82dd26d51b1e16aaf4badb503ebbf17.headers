@@ -1,0 +1,45 @@
+{
+  "statusCode": 200,
+  "headers": {
+    "server": "GitHub.com",
+    "date": "Sat, 17 May 2014 18:13:28 GMT",
+    "content-type": "application/json; charset=utf-8",
+    "connection": "close",
+    "status": "200 OK",
+    "x-ratelimit-limit": "5000",
+    "x-ratelimit-remaining": "4876",
+    "x-ratelimit-reset": "1400353465",
+    "cache-control": "private, max-age=60, s-maxage=60",
+    "last-modified": "Sat, 17 May 2014 18:13:25 GMT",
+    "etag": "\"a1398e249d73b033dced0a58eaef71f9\"",
+    "x-poll-interval": "60",
+    "x-oauth-scopes": "gist, repo, user",
+    "x-accepted-oauth-scopes": "",
+    "vary": "Accept, Authorization, Cookie, X-GitHub-OTP",
+    "x-github-media-type": "github.v3; param=raw",
+    "link": "<https://api.github.com/user/6076381/events?page=2>; rel=\"next\"",
+    "x-xss-protection": "1; mode=block",
+    "x-frame-options": "deny",
+    "content-security-policy": "default-src 'none'",
+    "content-length": "33932",
+    "access-control-allow-credentials": "true",
+    "access-control-expose-headers": "ETag, Link, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval",
+    "access-control-allow-origin": "*",
+    "x-github-request-id": "17757AFA:303E:3E7C7E5:5377A6C7",
+    "strict-transport-security": "max-age=31536000",
+    "x-content-type-options": "nosniff",
+    "x-served-by": "d818ddef80f4c7d10683dd483558952a"
+  },
+  "url": "https://api.github.com:443/users/octokit-test/events",
+  "time": 351,
+  "request": {
+    "method": "GET",
+    "headers": {
+      "User-Agent": "octokit",
+      "Accept": "application/vnd.github.raw",
+      "If-Modified-Since": "Thu, 01 Jan 1970 00:00:00 GMT",
+      "Authorization": "token dca7f85a5911df8e9b7aeb4c5be8f5f50806ac49",
+      "Host": "api.github.com"
+    }
+  }
+}
