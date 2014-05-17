@@ -128,7 +128,6 @@ define 'octokit-part/grammar', [], () ->
           | members
         )
 
-
       | users/ [^/]+
       | users/ [^/]+ / (
             repos
@@ -141,7 +140,6 @@ define 'octokit-part/grammar', [], () ->
           | received_events
         )
 
-
       | search/ (
             repositories
           | issues
@@ -149,13 +147,11 @@ define 'octokit-part/grammar', [], () ->
           | code
         )
 
-
       | gists/ (
             public
           | [a-f0-9]{20} (/star)?
           | [0-9]+       (/star)?
         )
-
 
       | repos (/[^/]+){2}
       | repos (/[^/]+){2} / (
