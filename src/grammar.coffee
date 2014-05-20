@@ -42,7 +42,9 @@ define 'octokit-part/grammar', [], () ->
       'public'    : false
       'star'      : false
     'repos':
-      'hooks'         : false
+      'readme'        : false
+      'hooks':
+        'tests'       : false
       'assignees'     : false
       'branches'      : false
       'contributors'  : false
@@ -61,6 +63,7 @@ define 'octokit-part/grammar', [], () ->
           'heads'     : false
         'trees'       : false
         'blobs'       : false
+        'commits'     : false
       'stats':
         'contributors'    : false
         'commit_activity' : false
@@ -155,7 +158,10 @@ define 'octokit-part/grammar', [], () ->
 
       | repos (/[^/]+){2}
       | repos (/[^/]+){2} / (
-            hooks
+            readme
+          | hooks
+          | hooks /[^/]+
+          | hooks /[^/]+ /tests
           | assignees
           | branches
           | contributors
@@ -174,9 +180,11 @@ define 'octokit-part/grammar', [], () ->
               )
 
           | git/ (
-                refs (/heads)?
+                refs
+              | refs / heads (/[^/]+)?
               | trees (/[a-f0-9]{40}$)?
               | blobs (/[a-f0-9]{40}$)?
+              | commits (/[a-f0-9]{40}$)?
             )
           | stats/ (
                 contributors
