@@ -10,6 +10,7 @@ define 'octokit-part/grammar', [], () ->
     'meta'        : false
     'rate_limit'  : false
     'feeds'       : false
+    'events'      : false
     'gitignore':
       'templates' : false
     'user':
@@ -46,6 +47,7 @@ define 'octokit-part/grammar', [], () ->
       'hooks':
         'tests'       : false
       'assignees'     : false
+      'languages'     : false
       'branches'      : false
       'contributors'  : false
       'subscribers'   : false
@@ -54,6 +56,10 @@ define 'octokit-part/grammar', [], () ->
       'downloads'     : false
       'milestones'    : false
       'labels'        : false
+      'releases'      : false
+      'events'        : false
+      'commits'       : false
+      'contents'      : false
       'collaborators' : false
       'issues':
         'events'      : false
@@ -112,8 +118,10 @@ define 'octokit-part/grammar', [], () ->
       | meta
       | rate_limit
       | feeds
+      | events
       | gitignore/templates (/[^/]+)?
 
+      | user
       | user/ (
           repos
         | orgs
@@ -163,6 +171,7 @@ define 'octokit-part/grammar', [], () ->
           | hooks /[^/]+
           | hooks /[^/]+ /tests
           | assignees
+          | languages
           | branches
           | contributors
           | subscribers
@@ -171,6 +180,10 @@ define 'octokit-part/grammar', [], () ->
           | downloads
           | milestones
           | labels
+          | releases
+          | events
+          | commits
+          | contents (/[^/]+)* # The path is allowed in the URL
           | collaborators (/[^/]+)?
           | issues
           | issues/ (
@@ -182,7 +195,7 @@ define 'octokit-part/grammar', [], () ->
           | git/ (
                 refs
               | refs / heads (/[^/]+)?
-              | trees (/[a-f0-9]{40}$)?
+              | trees (/[^/]+)? # Can be a sha or a branch name
               | blobs (/[a-f0-9]{40}$)?
               | commits (/[a-f0-9]{40}$)?
             )

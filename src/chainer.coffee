@@ -37,10 +37,10 @@ define 'octokit-part/chainer', [
     fn.fetch        = (config) ->   tester(_path); request('GET', "#{_path}#{toQueryString(config)}")
     fn.read         = () ->         tester(_path); request('GET', _path, null, raw:true)
     fn.readBinary   = () ->         tester(_path); request('GET', _path, null, raw:true, isBase64:true)
-    fn.remove       = () ->         tester(_path); request('DELETE', _path, null, isBoolean:true)
+    fn.remove       = (config) ->   tester(_path); request('DELETE', _path, config, isBoolean:true)
     fn.create       = (config, isRaw) ->   tester(_path); request('POST', _path, config, raw:isRaw)
     fn.update       = (config) ->   tester(_path); request('PATCH', _path, config)
-    fn.add          = () ->         tester(_path); request('PUT', _path, null, isBoolean:true)
+    fn.add          = (config) ->   tester(_path); request('PUT', _path, config, isBoolean:true)
     fn.contains     = (args...) ->  tester(_path); request('GET', "#{_path}/#{args.join('/')}", null, isBoolean:true)
 
     toCallback = (fnName) ->
