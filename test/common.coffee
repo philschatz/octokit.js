@@ -88,13 +88,20 @@ makeTests = (assert, expect, base64encode, Octokit) ->
       code += '()' if isFuncArgs
 
 
-      it "#{obj}#{code}", (done) ->
+      constructMethod = () ->
+
+        # Construct the method call
         context = STATE[obj]
         isFuncArgs = false # Every other arg is a function arg
+        finalArgs = []
         for arg in args
+          isLast = arg is args[args.length - 1]
           if isFuncArgs
             arg = [arg] unless Array.isArray(arg)
-            context = context(arg...)
+            if isLast
+              finalArgs = arg
+            else
+              context = context(arg...)
           else
             names = arg.split('.')
             for field in names
@@ -102,11 +109,23 @@ makeTests = (assert, expect, base64encode, Octokit) ->
 
           isFuncArgs = !isFuncArgs
 
+        return {finalArgs, context}
+
+
+      it "#{obj}#{code}", (done) ->
+        {finalArgs, context} = constructMethod()
         # If the last arg was something like 'fetch' then
         if isFuncArgs
           helper1 done, context(), cb
         else
-          helper1 done, context, cb
+          helper1 done, context(finalArgs...), cb
+
+      it "#{obj}#{code} (callback ver)", (done) ->
+        {finalArgs, context} = constructMethod()
+        context finalArgs..., (err, val) ->
+          return assert.fail(err) if err
+          cb(val)
+          done()
 
 
     itIsOk = (obj, args...) ->
@@ -175,6 +194,7 @@ makeTests = (assert, expect, base64encode, Octokit) ->
 
       # Accessors for methods generated from URL patterns
       itIsArray(REPO, 'collaborators.fetch')
+      # itIsOk(REPO, 'readme.fetch')
       itIsArray(REPO, 'hooks.fetch')
       itIsArray(REPO, 'assignees.fetch')
       itIsArray(REPO, 'branches.fetch')
