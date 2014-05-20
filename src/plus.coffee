@@ -9,6 +9,10 @@ define 'octokit-part/plus', [], () ->
       else
         ''
 
+    uncamelize: (string) ->
+      return '' unless string
+      return string.replace /([A-Z])+/g, (match, letter='') -> "_#{letter.toLowerCase()}"
+
     dasherize: (string) ->
       return '' unless string
 

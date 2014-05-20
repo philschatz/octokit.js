@@ -4,13 +4,13 @@ define 'octokit-part/replacer', ['cs!octokit-part/plus'], (plus) ->
   class Replacer
     constructor: (@_request) ->
 
-    dasherize: (obj) ->
+    uncamelize: (obj) ->
       if Array.isArray(obj)
-        return (@dasherize(i) for i in obj)
+        return (@uncamelize(i) for i in obj)
       else if obj == Object(obj)
         o = {}
         for key, value of obj
-          o[plus.dasherize(key)] = @dasherize(value)
+          o[plus.uncamelize(key)] = @uncamelize(value)
         return o
       else
         return obj

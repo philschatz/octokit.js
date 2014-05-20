@@ -18,7 +18,7 @@ define 'octokit', [
     request = (method, path, data, options={raw:false, isBase64:false, isBoolean:false}) ->
       replacer = new Replacer(request)
 
-      data = replacer.dasherize(data) if data
+      data = replacer.uncamelize(data) if data
 
       return _request(method, path, data, options)
       .then (val) ->
