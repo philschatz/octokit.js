@@ -64,7 +64,8 @@ define 'octokit-part/helper-promise', [], () ->
           fn(resolve.resolve.bind(resolve), resolve.reject.bind(resolve))
         else
           fn(arguments...)
-      allPromises = @Promise.all
+
+      allPromises = (promises) => @Promise.all(promises)
 
     else
       # Otherwise, throw an error
