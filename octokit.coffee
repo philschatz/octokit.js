@@ -119,10 +119,41 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
 
   class Octokit
 
+    # Generic GitHub specific operations that don't fit into
+    # subclasses like Repository.
+    class Github
+      constructor: ->
+        @defaultRootURL = 'https://api.github.com'
+
+      setAuthHeader: (headers, token, username, password) ->
+        if (token) or (username and password)
+          if token
+            auth = "token #{token}"
+          else
+            auth = 'Basic ' + base64encode("#{username}:#{password}")
+          headers['Authorization'] = auth
+
+    class Gitlab
+      constructor: ->
+        @defaultRootURL = 'https://gitlab.com/api/v3'
+
+      setAuthHeader: (headers, token, username, password) ->
+        if token
+          headers['PRIVATE-TOKEN'] = token
+        else
+          throw new Error 'BUG: token required for GitLab API'
+
     constructor: (clientOptions={}) ->
+
+      _.defaults clientOptions, api: 'github'
+      _api = switch clientOptions.api
+        when 'github' then new Github
+        when 'gitlab' then new Gitlab
+        else throw new Error "BUG: unsupported API: #{clientOptions.api}"
+
       # Provide an option to override the default URL
       _.defaults clientOptions,
-        rootURL: 'https://api.github.com'
+        rootURL: _api.defaultRootURL
         useETags: true
         usePostInsteadOfPatch: false
 
@@ -178,14 +209,7 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
           # a URL is requested.
           headers['If-Modified-Since'] = 'Thu, 01 Jan 1970 00:00:00 GMT'
 
-
-        if (clientOptions.token) or (clientOptions.username and clientOptions.password)
-          if clientOptions.token
-            auth = "token #{clientOptions.token}"
-          else
-            auth = 'Basic ' + base64encode("#{clientOptions.username}:#{clientOptions.password}")
-          headers['Authorization'] = auth
-
+        _api.setAuthHeader(headers, clientOptions.token, clientOptions.username, clientOptions.password)
 
         promise = newPromise (resolve, reject) ->
 
@@ -1067,7 +1091,7 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
       # -------
       # Provides methods for operating on the entire repository
       # and ways to operate on a `Branch`.
-      class Repository
+      class RepositoryBase
 
         constructor: (@options) ->
           # Private fields
@@ -1076,7 +1100,9 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
 
           # Set the `git` instance variable
           @git = new GitRepo(_user, _repo)
-          @repoPath = "/repos/#{_user}/#{_repo}"
+
+          @repoPath = @getRepoPath(_user, _repo)
+
           @currentTree =
             branch: null
             sha: null
@@ -1120,7 +1146,7 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
           # Get repository information
           # -------
           @getInfo = () ->
-            _request 'GET', @repoPath, null
+            @normalizeResponse _request('GET', @repoPath, null)
 
           # Get contents
           # --------
@@ -1308,6 +1334,28 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
             _request 'GET', "#{@repoPath}/releases", null
 
 
+      class Repository extends RepositoryBase
+        if clientOptions.api == 'github'
+          getRepoPath: (user, repo) ->
+            "/repos/#{user}/#{repo}"
+          normalizeResponse: (responsePromise) ->
+            responsePromise
+        else
+          getRepoPath: (user, repo) ->
+            "/projects/#{user}%2F#{repo}"
+          normalizeResponse: (responsePromise) ->
+            newPromise (resolve, reject) ->
+              responsePromise.then(
+                (repo) ->
+                  repo.humanName = repo.name
+                  repo.name = repo.path
+                  delete repo.path
+                  resolve repo
+                (err) ->
+                  reject err
+              )
+
+
       # Gist API
       # -------
       class Gist
@@ -1430,9 +1478,6 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
         else
           return resolvedPromise(null)
 
-
-
-  # Return the class for assignment
   return Octokit
 
 # Register with nodejs, requirejs, or as a global

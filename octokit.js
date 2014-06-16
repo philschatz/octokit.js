@@ -154,13 +154,66 @@
       });
     };
     Octokit = (function() {
+      var Github, Gitlab;
+
+      Github = (function() {
+        function Github() {
+          this.defaultRootURL = 'https://api.github.com';
+        }
+
+        Github.prototype.setAuthHeader = function(headers, token, username, password) {
+          var auth;
+          if (token || (username && password)) {
+            if (token) {
+              auth = "token " + token;
+            } else {
+              auth = 'Basic ' + base64encode("" + username + ":" + password);
+            }
+            return headers['Authorization'] = auth;
+          }
+        };
+
+        return Github;
+
+      })();
+
+      Gitlab = (function() {
+        function Gitlab() {
+          this.defaultRootURL = 'https://gitlab.com/api/v3';
+        }
+
+        Gitlab.prototype.setAuthHeader = function(headers, token, username, password) {
+          if (token) {
+            return headers['PRIVATE-TOKEN'] = token;
+          } else {
+            throw new Error('BUG: token required for GitLab API');
+          }
+        };
+
+        return Gitlab;
+
+      })();
+
       function Octokit(clientOptions) {
-        var AuthenticatedUser, Branch, ETagResponse, Gist, GitRepo, Organization, Repository, Team, User, clearCache, getCache, notifyEnd, notifyStart, setCache, toQueryString, _cachedETags, _client, _listeners, _request;
+        var AuthenticatedUser, Branch, ETagResponse, Gist, GitRepo, Organization, Repository, RepositoryBase, Team, User, clearCache, getCache, notifyEnd, notifyStart, setCache, toQueryString, _api, _cachedETags, _client, _listeners, _ref, _request;
         if (clientOptions == null) {
           clientOptions = {};
         }
         _.defaults(clientOptions, {
-          rootURL: 'https://api.github.com',
+          api: 'github'
+        });
+        _api = (function() {
+          switch (clientOptions.api) {
+            case 'github':
+              return new Github;
+            case 'gitlab':
+              return new Gitlab;
+            default:
+              throw new Error("BUG: unsupported API: " + clientOptions.api);
+          }
+        })();
+        _.defaults(clientOptions, {
+          rootURL: _api.defaultRootURL,
           useETags: true,
           usePostInsteadOfPatch: false
         });
@@ -190,7 +243,7 @@
           }) : void 0;
         };
         _request = function(method, path, data, options) {
-          var auth, headers, mimeType, promise;
+          var headers, mimeType, promise;
           if (options == null) {
             options = {
               raw: false,
@@ -219,14 +272,7 @@
           } else {
             headers['If-Modified-Since'] = 'Thu, 01 Jan 1970 00:00:00 GMT';
           }
-          if (clientOptions.token || (clientOptions.username && clientOptions.password)) {
-            if (clientOptions.token) {
-              auth = "token " + clientOptions.token;
-            } else {
-              auth = 'Basic ' + base64encode("" + clientOptions.username + ":" + clientOptions.password);
-            }
-            headers['Authorization'] = auth;
-          }
+          _api.setAuthHeader(headers, clientOptions.token, clientOptions.username, clientOptions.password);
           promise = newPromise(function(resolve, reject) {
             var ajaxConfig, always, onError, xhrPromise,
               _this = this;
@@ -1023,14 +1069,14 @@
           return Branch;
 
         })();
-        Repository = (function() {
-          function Repository(options) {
+        RepositoryBase = (function() {
+          function RepositoryBase(options) {
             var _repo, _user;
             this.options = options;
             _user = this.options.user;
             _repo = this.options.name;
             this.git = new GitRepo(_user, _repo);
-            this.repoPath = "/repos/" + _user + "/" + _repo;
+            this.repoPath = this.getRepoPath(_user, _repo);
             this.currentTree = {
               branch: null,
               sha: null
@@ -1073,7 +1119,7 @@
               });
             };
             this.getInfo = function() {
-              return _request('GET', this.repoPath, null);
+              return this.normalizeResponse(_request('GET', this.repoPath, null));
             };
             this.getContents = function(branch, path) {
               return _request('GET', "" + this.repoPath + "/contents?ref=" + branch, {
@@ -1237,9 +1283,45 @@
             };
           }
 
-          return Repository;
+          return RepositoryBase;
 
         })();
+        Repository = (function(_super) {
+          __extends(Repository, _super);
+
+          function Repository() {
+            _ref = Repository.__super__.constructor.apply(this, arguments);
+            return _ref;
+          }
+
+          if (clientOptions.api === 'github') {
+            Repository.prototype.getRepoPath = function(user, repo) {
+              return "/repos/" + user + "/" + repo;
+            };
+            Repository.prototype.normalizeResponse = function(responsePromise) {
+              return responsePromise;
+            };
+          } else {
+            Repository.prototype.getRepoPath = function(user, repo) {
+              return "/projects/" + user + "%2F" + repo;
+            };
+            Repository.prototype.normalizeResponse = function(responsePromise) {
+              return newPromise(function(resolve, reject) {
+                return responsePromise.then(function(repo) {
+                  repo.humanName = repo.name;
+                  repo.name = repo.path;
+                  delete repo.path;
+                  return resolve(repo);
+                }, function(err) {
+                  return reject(err);
+                });
+              });
+            };
+          }
+
+          return Repository;
+
+        })(RepositoryBase);
         Gist = (function() {
           function Gist(options) {
             var id, _gistPath;
