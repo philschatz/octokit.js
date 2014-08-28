@@ -12,7 +12,7 @@
   };
 
   _.isArray = function(object) {
-    return !!(object != null ? object.slice : void 0);
+    return object instanceof Array;
   };
 
   _.defaults = function(object, values) {
