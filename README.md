@@ -77,7 +77,10 @@ This requires NodeJS 0.11 with the `--harmony-generators` flag:
 ```js
 var co = require('co');
 var Octokit = require('octokit');
-var gh = Octokit.new();
+var gh = new Octokit({
+  token: "access token",
+  auth: "oauth"
+});
 
 var fn = function *() {
   var zen  = yield gh.getZen();
