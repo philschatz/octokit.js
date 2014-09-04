@@ -488,7 +488,6 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
             isPublic = '/public' if onlyPublic
             _request 'GET', "/users/#{_username}/events#{isPublic}", null
 
-
       # Authenticated User API
       # =======
       class AuthenticatedUser extends User
@@ -577,6 +576,15 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
           @getReceivedEvents = (username, page = 1) ->
             currentPage = '?page=' + page
             _request 'GET', '/users/' + username + '/received_events' + currentPage, null
+
+          @getStars = () ->
+            _request 'GET', "/user/starred"
+
+          @putStar = (owner, repo) ->
+            _request 'PUT', "/user/starred/#{owner}/#{repo}"
+
+          @deleteStar = (owner, repo) ->
+            _request 'DELETE', "/user/starred/#{owner}/#{repo}"
 
 
       # Organization API
