@@ -25,7 +25,7 @@ _.isEmpty = (object) ->
   Object.keys(object).length == 0
 
 _.isArray = (object) ->
-  !!object?.slice
+  object instanceof Array
 
 _.defaults = (object, values) ->
   for key in Object.keys(values)
