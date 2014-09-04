@@ -583,6 +583,9 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
           @putStar = (owner, repo) ->
             _request 'PUT', "/user/starred/#{owner}/#{repo}"
 
+          @deleteStar = (owner, repo) ->
+            _request 'DELETE', "/user/starred/#{owner}/#{repo}"
+
 
       # Organization API
       # =======

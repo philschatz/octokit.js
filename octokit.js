@@ -581,6 +581,9 @@
               this.putStar = function(owner, repo) {
                 return _request('PUT', "/user/starred/" + owner + "/" + repo);
               };
+              this.deleteStar = function(owner, repo) {
+                return _request('DELETE', "/user/starred/" + owner + "/" + repo);
+              };
             }
 
             return AuthenticatedUser;
