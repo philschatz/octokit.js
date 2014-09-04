@@ -24,8 +24,8 @@ _ = {}
 _.isEmpty = (object) ->
   Object.keys(object).length == 0
 
-_.isArray = (object) ->
-  !!object?.slice
+_.isArray = Array.isArray or (obj) ->
+  toString.call(obj) is'[object Array]'
 
 _.defaults = (object, values) ->
   for key in Object.keys(values)

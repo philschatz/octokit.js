@@ -11,8 +11,8 @@
     return Object.keys(object).length === 0;
   };
 
-  _.isArray = function(object) {
-    return !!(object != null ? object.slice : void 0);
+  _.isArray = Array.isArray || function(obj) {
+    return toString.call(obj) === '[object Array]';
   };
 
   _.defaults = function(object, values) {
