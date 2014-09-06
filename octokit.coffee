@@ -1453,7 +1453,7 @@ if exports?
   XMLHttpRequest  = @XMLHttpRequest or require('xmlhttprequest').XMLHttpRequest
 
   newPromise = (fn) -> return new Promise(fn)
-  allPromises = (promises) -> return Promise.all(promises)
+  allPromises = (promises) -> return Promise.all.call(Promise, promises)
 
   # Encode using native Base64
   encode = @btoa or (str) ->
@@ -1534,7 +1534,7 @@ else
         fn(resolve.resolve.bind(resolve), resolve.reject.bind(resolve))
       else
         fn(arguments...)
-    allPromises = @Promise.all
+    allPromises = (promises) => @Promise.all.call(@Promise, promises)
     createGlobalAndAMD(newPromise, allPromises)
 
   else

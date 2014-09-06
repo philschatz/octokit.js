@@ -1364,7 +1364,7 @@
       return new Promise(fn);
     };
     allPromises = function(promises) {
-      return Promise.all(promises);
+      return Promise.all.call(Promise, promises);
     };
     encode = this.btoa || function(str) {
       var buffer;
@@ -1456,7 +1456,9 @@
           }
         });
       };
-      allPromises = this.Promise.all;
+      allPromises = function(promises) {
+        return _this.Promise.all.call(_this.Promise, promises);
+      };
       createGlobalAndAMD(newPromise, allPromises);
     } else {
       err = function(msg) {
