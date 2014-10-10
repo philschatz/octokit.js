@@ -155,14 +155,16 @@
     };
     Octokit = (function() {
       function Octokit(clientOptions) {
-        var AuthenticatedUser, Branch, ETagResponse, Gist, GitRepo, Organization, Repository, Team, User, clearCache, getCache, notifyEnd, notifyStart, setCache, toQueryString, _cachedETags, _client, _listeners, _request;
+        var AuthenticatedUser, Branch, ETagResponse, Gist, GitRepo, Organization, Repository, Team, User, clearCache, getCache, notifyEnd, notifyStart, setCache, toQueryString, _cachePrefix, _cachedETags, _client, _listeners, _request;
         if (clientOptions == null) {
           clientOptions = {};
         }
         _.defaults(clientOptions, {
           rootURL: 'https://api.github.com',
           useETags: true,
-          usePostInsteadOfPatch: false
+          usePostInsteadOfPatch: false,
+          useSessionStorage: false,
+          cachePrefix: '__octokitCache__'
         });
         _client = this;
         _listeners = [];
@@ -176,7 +178,21 @@
           return ETagResponse;
 
         })();
+        if (typeof Storage === void 0) {
+          clientOptions.useSessionStorage = false;
+        }
+        _cachePrefix = clientOptions.cachePrefix;
         _cachedETags = {};
+        if (clientOptions.useSessionStorage) {
+          _.each(_.pairs(sessionStorage), function(_arg) {
+            var key, value;
+            key = _arg[0], value = _arg[1];
+            if (key.indexOf(_cachePrefix) === 0) {
+              key = key.replace(_cachePrefix, "");
+              return _cachedETags[key] = JSON.parse(value);
+            }
+          });
+        }
         notifyStart = function(promise, path) {
           return typeof promise.notify === "function" ? promise.notify({
             type: 'start',
@@ -301,6 +317,9 @@
                 if ('GET' === method && jqXHR.getResponseHeader('ETag') && clientOptions.useETags) {
                   eTag = jqXHR.getResponseHeader('ETag');
                   _cachedETags[path] = new ETagResponse(eTag, data, jqXHR.status);
+                  if (clientOptions.useSessionStorage) {
+                    sessionStorage["" + _cachePrefix + path] = JSON.stringify(_cachedETags[path]);
+                  }
                 }
                 return resolve(data, jqXHR.status, jqXHR);
               }

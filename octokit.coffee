@@ -124,7 +124,9 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
       _.defaults clientOptions,
         rootURL: 'https://api.github.com'
         useETags: true
-        usePostInsteadOfPatch: false
+        usePostInsteadOfPatch: false,
+        useSessionStorage: false,
+        cachePrefix: '__octokitCache__'
 
       _client = @ # Useful for other classes (like Repo) to get the current Client object
 
@@ -136,7 +138,18 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
         constructor: (@eTag, @data, @status) ->
 
       # Cached responses are stored in this object keyed by `path`
+      if typeof Storage == undefined
+        
+        clientOptions.useSessionStorage = false
+
+      _cachePrefix = clientOptions.cachePrefix
       _cachedETags = {}
+
+      if clientOptions.useSessionStorage
+        _.each _.pairs(sessionStorage), ([key, value]) ->
+          if key.indexOf(_cachePrefix) == 0
+            key = key.replace _cachePrefix,""
+            _cachedETags[key] = JSON.parse(value)
 
       # Send simple progress notifications
       notifyStart = (promise, path) -> promise.notify? {type:'start', path:path}
@@ -279,6 +292,8 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
               if 'GET' == method and jqXHR.getResponseHeader('ETag') and clientOptions.useETags
                 eTag = jqXHR.getResponseHeader('ETag')
                 _cachedETags[path] = new ETagResponse(eTag, data, jqXHR.status)
+                if clientOptions.useSessionStorage
+                  sessionStorage["#{_cachePrefix}#{path}"] = JSON.stringify _cachedETags[path]
 
               resolve(data, jqXHR.status, jqXHR)
 
