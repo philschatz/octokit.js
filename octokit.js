@@ -776,17 +776,21 @@
             };
             this.postBlob = function(content, isBase64) {
               var _this = this;
-              if (typeof content === 'string') {
-                if (isBase64) {
-                  content = base64encode(content);
-                }
+              if (isBase64) {
                 content = {
                   content: content,
-                  encoding: 'utf-8'
+                  encoding: 'base64'
                 };
-              }
-              if (isBase64) {
-                content.encoding = 'base64';
+              } else {
+                if (typeof content === 'string') {
+                  if (isBase64) {
+                    content = base64encode(content);
+                  }
+                  content = {
+                    content: content,
+                    encoding: 'utf-8'
+                  };
+                }
               }
               return _request('POST', "" + _repoPath + "/git/blobs", content).then(function(res) {
                 return res.sha;

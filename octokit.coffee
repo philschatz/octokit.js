@@ -791,15 +791,17 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
           # Post a new blob object, getting a blob SHA back
           # -------
           @postBlob = (content, isBase64) ->
-            if typeof (content) is 'string'
-              # Base64 encode the content if it is binary (isBase64)
-              content = base64encode(content) if isBase64
-
+            if isBase64
               content =
-                content: content
-                encoding: 'utf-8'
-
-            content.encoding = 'base64' if isBase64
+                content: content,
+                encoding: 'base64'
+            else
+              if typeof (content) is 'string'
+                # Base64 encode the content if it is binary (isBase64)
+                content = base64encode(content) if isBase64
+                content =
+                  content: content
+                  encoding: 'utf-8'
 
             _request('POST', "#{_repoPath}/git/blobs", content)
             .then (res) =>
