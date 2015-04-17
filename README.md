@@ -1,3 +1,9 @@
+# This repo is no longer maintained. Check out [philschatz/octokat.js](https://github.com/philschatz/octokat.js)
+
+It supports ~100% of GitHub's API, callbacks as well as Promises, and more!
+
+---
+
 # octokit.js [![Build Status](https://travis-ci.org/philschatz/octokit.js.png)](https://travis-ci.org/philschatz/octokit.js)
 
 octokit.js provides a minimal higher-level wrapper around git's [plumbing commands](http://git-scm.com/book/en/Git-Internals-Plumbing-and-Porcelain),
