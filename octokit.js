@@ -1303,6 +1303,29 @@
                 isBoolean: true
               });
             };
+            this.comments = function() {
+              return _request('GET', "" + _gistPath + "/comments");
+            };
+            this.comment = function(id) {
+              return _request('GET', "" + _gistPath + "/comments/" + id);
+            };
+            this.createComment = function(body) {
+              var comment;
+              comment = {
+                body: body
+              };
+              return _request('POST', "" + _gistPath + "/comments", comment);
+            };
+            this.updateComment = function(id, body) {
+              var comment;
+              comment = {
+                body: body
+              };
+              return _request('PATCH', "" + _gistPath + "/comments/" + id, comment);
+            };
+            this.deleteComment = function(id) {
+              return _request('DELETE', "" + _gistPath + "/comments/" + id);
+            };
           }
 
           return Gist;
