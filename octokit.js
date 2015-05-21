@@ -1034,217 +1034,243 @@
         })();
         Repository = (function() {
           function Repository(options) {
-            var _repo, _user;
             this.options = options;
-            _user = this.options.user;
-            _repo = this.options.name;
-            this.git = new GitRepo(_user, _repo);
-            this.repoPath = "/repos/" + _user + "/" + _repo;
+            this.user = this.options.user;
+            this.repo = this.options.name;
+            this.git = new GitRepo(this.user, this.repo);
+            this.repoPath = "/repos/" + this.user + "/" + this.repo;
             this.currentTree = {
               branch: null,
               sha: null
             };
-            this.updateInfo = function(options) {
-              return _request('PATCH', this.repoPath, options);
-            };
-            this.getBranches = function() {
-              return this.git.getBranches();
-            };
-            this.getBranch = function(branchName) {
-              var getRef,
-                _this = this;
-              if (branchName == null) {
-                branchName = null;
-              }
-              if (branchName) {
-                getRef = function() {
-                  return resolvedPromise(branchName);
-                };
-                return new Branch(this.git, getRef);
-              } else {
-                return this.getDefaultBranch();
-              }
-            };
-            this.getDefaultBranch = function() {
-              var getRef,
-                _this = this;
+          }
+
+          Repository.prototype.updateInfo = function(options) {
+            return _request('PATCH', this.repoPath, options);
+          };
+
+          Repository.prototype.getBranches = function() {
+            return this.git.getBranches();
+          };
+
+          Repository.prototype.getBranch = function(branchName) {
+            var getRef,
+              _this = this;
+            if (branchName == null) {
+              branchName = null;
+            }
+            if (branchName) {
               getRef = function() {
-                return _this.getInfo().then(function(info) {
-                  return info.default_branch;
-                });
+                return resolvedPromise(branchName);
               };
               return new Branch(this.git, getRef);
-            };
-            this.setDefaultBranch = function(branchName) {
-              return this.updateInfo({
-                name: _repo,
-                default_branch: branchName
+            } else {
+              return this.getDefaultBranch();
+            }
+          };
+
+          Repository.prototype.getDefaultBranch = function() {
+            var getRef,
+              _this = this;
+            getRef = function() {
+              return _this.getInfo().then(function(info) {
+                return info.default_branch;
               });
             };
-            this.getInfo = function() {
-              return _request('GET', this.repoPath, null);
-            };
-            this.getContents = function(branch, path) {
-              return _request('GET', "" + this.repoPath + "/contents?ref=" + branch, {
-                path: path
+            return new Branch(this.git, getRef);
+          };
+
+          Repository.prototype.setDefaultBranch = function(branchName) {
+            return this.updateInfo({
+              name: this.repo,
+              default_branch: branchName
+            });
+          };
+
+          Repository.prototype.getInfo = function() {
+            return _request('GET', this.repoPath, null);
+          };
+
+          Repository.prototype.getContents = function(branch, path) {
+            return _request('GET', "" + this.repoPath + "/contents?ref=" + branch, {
+              path: path
+            });
+          };
+
+          Repository.prototype.fork = function(organization) {
+            if (organization) {
+              return _request('POST', "" + this.repoPath + "/forks", {
+                organization: organization
               });
-            };
-            this.fork = function(organization) {
-              if (organization) {
-                return _request('POST', "" + this.repoPath + "/forks", {
-                  organization: organization
-                });
-              } else {
-                return _request('POST', "" + this.repoPath + "/forks", null);
+            } else {
+              return _request('POST', "" + this.repoPath + "/forks", null);
+            }
+          };
+
+          Repository.prototype.createPullRequest = function(options) {
+            return _request('POST', "" + this.repoPath + "/pulls", options);
+          };
+
+          Repository.prototype.getCommits = function(options) {
+            return this.git.getCommits(options);
+          };
+
+          Repository.prototype.getEvents = function() {
+            return _request('GET', "" + this.repoPath + "/events", null);
+          };
+
+          Repository.prototype.getIssueEvents = function() {
+            return _request('GET', "" + this.repoPath + "/issues/events", null);
+          };
+
+          Repository.prototype.getNetworkEvents = function() {
+            return _request('GET', "/networks/" + this.user + "/" + this.repo + "/events", null);
+          };
+
+          Repository.prototype.getNotifications = function(options) {
+            var getDate, queryString;
+            if (options == null) {
+              options = {};
+            }
+            getDate = function(time) {
+              if (Date === time.constructor) {
+                return time.toISOString();
               }
+              return time;
             };
-            this.createPullRequest = function(options) {
-              return _request('POST', "" + this.repoPath + "/pulls", options);
-            };
-            this.getCommits = function(options) {
-              return this.git.getCommits(options);
-            };
-            this.getEvents = function() {
-              return _request('GET', "" + this.repoPath + "/events", null);
-            };
-            this.getIssueEvents = function() {
-              return _request('GET', "" + this.repoPath + "/issues/events", null);
-            };
-            this.getNetworkEvents = function() {
-              return _request('GET', "/networks/" + _user + "/" + _repo + "/events", null);
-            };
-            this.getNotifications = function(options) {
-              var getDate, queryString;
-              if (options == null) {
-                options = {};
-              }
-              getDate = function(time) {
-                if (Date === time.constructor) {
-                  return time.toISOString();
-                }
-                return time;
-              };
-              if (options.since) {
-                options.since = getDate(options.since);
-              }
-              queryString = toQueryString(options);
-              return _request('GET', "" + this.repoPath + "/notifications" + queryString, null);
-            };
-            this.getCollaborators = function() {
-              return _request('GET', "" + this.repoPath + "/collaborators", null);
-            };
-            this.addCollaborator = function(username) {
-              if (!username) {
-                throw new Error('BUG: username is required');
-              }
-              return _request('PUT', "" + this.repoPath + "/collaborators/" + username, null, {
-                isBoolean: true
-              });
-            };
-            this.removeCollaborator = function(username) {
-              if (!username) {
-                throw new Error('BUG: username is required');
-              }
-              return _request('DELETE', "" + this.repoPath + "/collaborators/" + username, null, {
-                isBoolean: true
-              });
-            };
-            this.isCollaborator = function(username) {
-              if (username == null) {
-                username = null;
-              }
-              if (!username) {
-                throw new Error('BUG: username is required');
-              }
-              return _request('GET', "" + this.repoPath + "/collaborators/" + username, null, {
-                isBoolean: true
-              });
-            };
-            this.canCollaborate = function() {
-              var _this = this;
-              if (!(clientOptions.password || clientOptions.token)) {
-                return resolvedPromise(false);
-              }
-              return _client.getLogin().then(function(login) {
-                if (!login) {
-                  return false;
-                } else {
-                  return _this.isCollaborator(login);
-                }
-              }).then(null, function(err) {
+            if (options.since) {
+              options.since = getDate(options.since);
+            }
+            queryString = toQueryString(options);
+            return _request('GET', "" + this.repoPath + "/notifications" + queryString, null);
+          };
+
+          Repository.prototype.getCollaborators = function() {
+            return _request('GET', "" + this.repoPath + "/collaborators", null);
+          };
+
+          Repository.prototype.addCollaborator = function(username) {
+            if (!username) {
+              throw new Error('BUG: username is required');
+            }
+            return _request('PUT', "" + this.repoPath + "/collaborators/" + username, null, {
+              isBoolean: true
+            });
+          };
+
+          Repository.prototype.removeCollaborator = function(username) {
+            if (!username) {
+              throw new Error('BUG: username is required');
+            }
+            return _request('DELETE', "" + this.repoPath + "/collaborators/" + username, null, {
+              isBoolean: true
+            });
+          };
+
+          Repository.prototype.isCollaborator = function(username) {
+            if (username == null) {
+              username = null;
+            }
+            if (!username) {
+              throw new Error('BUG: username is required');
+            }
+            return _request('GET', "" + this.repoPath + "/collaborators/" + username, null, {
+              isBoolean: true
+            });
+          };
+
+          Repository.prototype.canCollaborate = function() {
+            var _this = this;
+            if (!(clientOptions.password || clientOptions.token)) {
+              return resolvedPromise(false);
+            }
+            return _client.getLogin().then(function(login) {
+              if (!login) {
                 return false;
-              });
+              } else {
+                return _this.isCollaborator(login);
+              }
+            }).then(null, function(err) {
+              return false;
+            });
+          };
+
+          Repository.prototype.getHooks = function() {
+            return _request('GET', "" + this.repoPath + "/hooks", null);
+          };
+
+          Repository.prototype.getHook = function(id) {
+            return _request('GET', "" + this.repoPath + "/hooks/" + id, null);
+          };
+
+          Repository.prototype.createHook = function(name, config, events, active) {
+            var data;
+            if (events == null) {
+              events = ['push'];
+            }
+            if (active == null) {
+              active = true;
+            }
+            data = {
+              name: name,
+              config: config,
+              events: events,
+              active: active
             };
-            this.getHooks = function() {
-              return _request('GET', "" + this.repoPath + "/hooks", null);
-            };
-            this.getHook = function(id) {
-              return _request('GET', "" + this.repoPath + "/hooks/" + id, null);
-            };
-            this.createHook = function(name, config, events, active) {
-              var data;
-              if (events == null) {
-                events = ['push'];
-              }
-              if (active == null) {
-                active = true;
-              }
-              data = {
-                name: name,
-                config: config,
-                events: events,
-                active: active
-              };
-              return _request('POST', "" + this.repoPath + "/hooks", data);
-            };
-            this.editHook = function(id, config, events, addEvents, removeEvents, active) {
-              var data;
-              if (config == null) {
-                config = null;
-              }
-              if (events == null) {
-                events = null;
-              }
-              if (addEvents == null) {
-                addEvents = null;
-              }
-              if (removeEvents == null) {
-                removeEvents = null;
-              }
-              if (active == null) {
-                active = null;
-              }
-              data = {};
-              if (config !== null) {
-                data.config = config;
-              }
-              if (events !== null) {
-                data.events = events;
-              }
-              if (addEvents !== null) {
-                data.add_events = addEvents;
-              }
-              if (removeEvents !== null) {
-                data.remove_events = removeEvents;
-              }
-              if (active !== null) {
-                data.active = active;
-              }
-              return _request('PATCH', "" + this.repoPath + "/hooks/" + id, data);
-            };
-            this.testHook = function(id) {
-              return _request('POST', "" + this.repoPath + "/hooks/" + id + "/tests", null);
-            };
-            this.deleteHook = function(id) {
-              return _request('DELETE', "" + this.repoPath + "/hooks/" + id, null);
-            };
-            this.getLanguages = function() {
-              return _request('GET', "" + this.repoPath + "/languages", null);
-            };
-            this.getReleases = function() {
-              return _request('GET', "" + this.repoPath + "/releases", null);
-            };
-          }
+            return _request('POST', "" + this.repoPath + "/hooks", data);
+          };
+
+          Repository.prototype.editHook = function(id, config, events, addEvents, removeEvents, active) {
+            var data;
+            if (config == null) {
+              config = null;
+            }
+            if (events == null) {
+              events = null;
+            }
+            if (addEvents == null) {
+              addEvents = null;
+            }
+            if (removeEvents == null) {
+              removeEvents = null;
+            }
+            if (active == null) {
+              active = null;
+            }
+            data = {};
+            if (config !== null) {
+              data.config = config;
+            }
+            if (events !== null) {
+              data.events = events;
+            }
+            if (addEvents !== null) {
+              data.add_events = addEvents;
+            }
+            if (removeEvents !== null) {
+              data.remove_events = removeEvents;
+            }
+            if (active !== null) {
+              data.active = active;
+            }
+            return _request('PATCH', "" + this.repoPath + "/hooks/" + id, data);
+          };
+
+          Repository.prototype.testHook = function(id) {
+            return _request('POST', "" + this.repoPath + "/hooks/" + id + "/tests", null);
+          };
+
+          Repository.prototype.deleteHook = function(id) {
+            return _request('DELETE', "" + this.repoPath + "/hooks/" + id, null);
+          };
+
+          Repository.prototype.getLanguages = function() {
+            return _request('GET', "" + this.repoPath + "/languages", null);
+          };
+
+          Repository.prototype.getReleases = function() {
+            return _request('GET', "" + this.repoPath + "/releases", null);
+          };
 
           return Repository;
 

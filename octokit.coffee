@@ -1079,241 +1079,241 @@ makeOctokit = (newPromise, allPromises, XMLHttpRequest, base64encode, userAgent)
 
         constructor: (@options) ->
           # Private fields
-          _user = @options.user
-          _repo = @options.name
+          @user = @options.user
+          @repo = @options.name
 
           # Set the `git` instance variable
-          @git = new GitRepo(_user, _repo)
-          @repoPath = "/repos/#{_user}/#{_repo}"
+          @git = new GitRepo(@user, @repo)
+          @repoPath = "/repos/#{@user}/#{@repo}"
           @currentTree =
             branch: null
             sha: null
 
 
-          @updateInfo = (options) ->
-            _request 'PATCH', @repoPath, options
+        updateInfo: (options) ->
+          _request 'PATCH', @repoPath, options
 
 
-          # List all branches of a repository
-          # -------
-          @getBranches = () -> @git.getBranches()
+        # List all branches of a repository
+        # -------
+        getBranches: () -> @git.getBranches()
 
 
-          # Get a branch of a repository
-          # -------
-          @getBranch = (branchName=null) ->
-            if branchName
-              getRef = () =>
-                return resolvedPromise(branchName)
-              return new Branch(@git, getRef)
-            else
-              return @getDefaultBranch()
+        # Get a branch of a repository
+        # -------
+        getBranch: (branchName=null) ->
+          if branchName
+            getRef = () =>
+              return resolvedPromise(branchName)
+            return new Branch(@git, getRef)
+          else
+            return @getDefaultBranch()
 
 
-          # Get the default branch of a repository
-          # -------
-          @getDefaultBranch = () ->
-            # Calls getInfo() to get the default branch name
-            getRef = =>
-              @getInfo()
-              .then (info) =>
-                return info.default_branch
-            new Branch(@git, getRef)
+        # Get the default branch of a repository
+        # -------
+        getDefaultBranch: () ->
+          # Calls getInfo() to get the default branch name
+          getRef = =>
+            @getInfo()
+            .then (info) =>
+              return info.default_branch
+          new Branch(@git, getRef)
 
 
-          @setDefaultBranch = (branchName) ->
-            @updateInfo {name: _repo, default_branch: branchName}
+        setDefaultBranch: (branchName) ->
+          @updateInfo {name: @repo, default_branch: branchName}
 
 
-          # Get repository information
-          # -------
-          @getInfo = () ->
-            _request 'GET', @repoPath, null
+        # Get repository information
+        # -------
+        getInfo: () ->
+          _request 'GET', @repoPath, null
 
-          # Get contents
-          # --------
-          @getContents = (branch, path) ->
-            _request 'GET', "#{@repoPath}/contents?ref=#{branch}", {path: path}
-
-
-          # Fork repository
-          # -------
-          @fork = (organization) ->
-            if organization
-              _request 'POST', "#{@repoPath}/forks",
-                organization: organization
-            else
-              _request 'POST', "#{@repoPath}/forks", null
+        # Get contents
+        # --------
+        getContents: (branch, path) ->
+          _request 'GET', "#{@repoPath}/contents?ref=#{branch}", {path: path}
 
 
-          # Create pull request
-          # --------
-          @createPullRequest = (options) ->
-            _request 'POST', "#{@repoPath}/pulls", options
+        # Fork repository
+        # -------
+        fork: (organization) ->
+          if organization
+            _request 'POST', "#{@repoPath}/forks",
+              organization: organization
+          else
+            _request 'POST', "#{@repoPath}/forks", null
 
 
-          # Get recent commits to the repository
-          # --------
-          # Takes an object of optional paramaters:
-          #
-          # - `path`: Only commits containing this file path will be returned
-          # - `author`: GitHub login, name, or email by which to filter by commit author
-          # - `since`: ISO 8601 date - only commits after this date will be returned
-          # - `until`: ISO 8601 date - only commits before this date will be returned
-          @getCommits = (options) ->
-            @git.getCommits(options)
+        # Create pull request
+        # --------
+        createPullRequest: (options) ->
+          _request 'POST', "#{@repoPath}/pulls", options
 
 
-          # List repository events
-          # -------
-          @getEvents = () ->
-            _request 'GET', "#{@repoPath}/events", null
-
-          # List Issue events for a Repository
-          # -------
-          @getIssueEvents = () ->
-            _request 'GET', "#{@repoPath}/issues/events", null
-
-          # List events for a network of Repositories
-          # -------
-          @getNetworkEvents = () ->
-            _request 'GET', "/networks/#{_user}/#{_repo}/events", null
+        # Get recent commits to the repository
+        # --------
+        # Takes an object of optional paramaters:
+        #
+        # - `path`: Only commits containing this file path will be returned
+        # - `author`: GitHub login, name, or email by which to filter by commit author
+        # - `since`: ISO 8601 date - only commits after this date will be returned
+        # - `until`: ISO 8601 date - only commits before this date will be returned
+        getCommits: (options) ->
+          @git.getCommits(options)
 
 
-          # List unread notifications for authenticated user
-          # -------
-          # Optional arguments:
-          #
-          # - `all`: `true` to show notifications marked as read.
-          # - `participating`: `true` to show only notifications in which
-          #   the user is directly participating or mentioned.
-          # - `since`: Optional time.
-          @getNotifications = (options={}) ->
-            # Converts a Date object to a string
-            getDate = (time) ->
-              return time.toISOString() if Date == time.constructor
-              return time
+        # List repository events
+        # -------
+        getEvents: () ->
+          _request 'GET', "#{@repoPath}/events", null
 
-            options.since = getDate(options.since) if options.since
+        # List Issue events for a Repository
+        # -------
+        getIssueEvents: () ->
+          _request 'GET', "#{@repoPath}/issues/events", null
 
-            queryString = toQueryString(options)
+        # List events for a network of Repositories
+        # -------
+        getNetworkEvents: () ->
+          _request 'GET', "/networks/#{@user}/#{@repo}/events", null
 
-            _request 'GET', "#{@repoPath}/notifications#{queryString}", null
 
-          # List Collaborators
-          # -------
-          # When authenticating as an organization owner of an
-          # organization-owned repository, all organization owners
-          # are included in the list of collaborators.
-          # Otherwise, only users with access to the repository are
-          # returned in the collaborators list.
-          @getCollaborators = () ->
-            _request 'GET', "#{@repoPath}/collaborators", null
+        # List unread notifications for authenticated user
+        # -------
+        # Optional arguments:
+        #
+        # - `all`: `true` to show notifications marked as read.
+        # - `participating`: `true` to show only notifications in which
+        #   the user is directly participating or mentioned.
+        # - `since`: Optional time.
+        getNotifications: (options={}) ->
+          # Converts a Date object to a string
+          getDate = (time) ->
+            return time.toISOString() if Date == time.constructor
+            return time
 
-          @addCollaborator = (username) ->
-            throw new Error 'BUG: username is required' if not username
-            _request 'PUT', "#{@repoPath}/collaborators/#{username}", null, {isBoolean:true}
+          options.since = getDate(options.since) if options.since
 
-          @removeCollaborator = (username) ->
-            throw new Error 'BUG: username is required' if not username
-            _request 'DELETE', "#{@repoPath}/collaborators/#{username}", null, {isBoolean:true}
+          queryString = toQueryString(options)
 
-          @isCollaborator = (username=null) ->
-            throw new Error 'BUG: username is required' if not username
-            _request 'GET', "#{@repoPath}/collaborators/#{username}", null, {isBoolean:true}
+          _request 'GET', "#{@repoPath}/notifications#{queryString}", null
 
-          # Can Collaborate
-          # -------
-          # True if the authenticated user has permission
-          # to commit to this repository.
-          @canCollaborate = () ->
-            # Short-circuit if no credentials provided
-            if not (clientOptions.password or clientOptions.token)
-              return resolvedPromise(false)
+        # List Collaborators
+        # -------
+        # When authenticating as an organization owner of an
+        # organization-owned repository, all organization owners
+        # are included in the list of collaborators.
+        # Otherwise, only users with access to the repository are
+        # returned in the collaborators list.
+        getCollaborators: () ->
+          _request 'GET', "#{@repoPath}/collaborators", null
 
-            _client.getLogin()
-            .then (login) =>
-              if not login
-                return false
-              else
-                return @isCollaborator(login)
-            .then null, (err) =>
-              # Problem logging in (maybe bad username/password)
+        addCollaborator: (username) ->
+          throw new Error 'BUG: username is required' if not username
+          _request 'PUT', "#{@repoPath}/collaborators/#{username}", null, {isBoolean:true}
+
+        removeCollaborator: (username) ->
+          throw new Error 'BUG: username is required' if not username
+          _request 'DELETE', "#{@repoPath}/collaborators/#{username}", null, {isBoolean:true}
+
+        isCollaborator: (username=null) ->
+          throw new Error 'BUG: username is required' if not username
+          _request 'GET', "#{@repoPath}/collaborators/#{username}", null, {isBoolean:true}
+
+        # Can Collaborate
+        # -------
+        # True if the authenticated user has permission
+        # to commit to this repository.
+        canCollaborate: () ->
+          # Short-circuit if no credentials provided
+          if not (clientOptions.password or clientOptions.token)
+            return resolvedPromise(false)
+
+          _client.getLogin()
+          .then (login) =>
+            if not login
               return false
+            else
+              return @isCollaborator(login)
+          .then null, (err) =>
+          # Problem logging in (maybe bad username/password)
+            return false
 
 
-          # List all hooks
-          # -------
-          @getHooks = () ->
-            _request 'GET', "#{@repoPath}/hooks", null
+        # List all hooks
+        # -------
+        getHooks: () ->
+          _request 'GET', "#{@repoPath}/hooks", null
 
-          # Get single hook
-          # -------
-          @getHook = (id) ->
-            _request 'GET', "#{@repoPath}/hooks/#{id}", null
+        # Get single hook
+        # -------
+        getHook: (id) ->
+          _request 'GET', "#{@repoPath}/hooks/#{id}", null
 
-          # Create a new hook
-          # -------
-          #
-          # - `name` (Required string) : The name of the service that is being called.
-          #         (See /hooks for the list of valid hook names.)
-          # - `config` (Required hash) : A Hash containing key/value pairs to provide settings for this hook.
-          #                              These settings vary between the services and are defined in the github-services repo.
-          # - `events` (Optional array) : Determines what events the hook is triggered for. Default: ["push"].
-          # - `active` (Optional boolean) : Determines whether the hook is actually triggered on pushes.
-          @createHook = (name, config, events=['push'], active=true) ->
-            data =
-              name: name
-              config: config
-              events: events
-              active: active
+        # Create a new hook
+        # -------
+        #
+        # - `name` (Required string) : The name of the service that is being called.
+        #         (See /hooks for the list of valid hook names.)
+        # - `config` (Required hash) : A Hash containing key/value pairs to provide settings for this hook.
+        #                              These settings vary between the services and are defined in the github-services repo.
+        # - `events` (Optional array) : Determines what events the hook is triggered for. Default: ["push"].
+        # - `active` (Optional boolean) : Determines whether the hook is actually triggered on pushes.
+        createHook: (name, config, events=['push'], active=true) ->
+          data =
+            name: name
+            config: config
+            events: events
+            active: active
 
-            _request 'POST', "#{@repoPath}/hooks", data
+          _request 'POST', "#{@repoPath}/hooks", data
 
-          # Edit a hook
-          # -------
-          #
-          # - `config` (Optional hash) : A Hash containing key/value pairs to provide settings for this hook.
-          #                      Modifying this will replace the entire config object.
-          #                      These settings vary between the services and are defined in the github-services repo.
-          # - `events` (Optional array) : Determines what events the hook is triggered for.
-          #                     This replaces the entire array of events. Default: ["push"].
-          # - `addEvents` (Optional array) : Determines a list of events to be added to the list of events that the Hook triggers for.
-          # - `removeEvents` (Optional array) : Determines a list of events to be removed from the list of events that the Hook triggers for.
-          # - `active` (Optional boolean) : Determines whether the hook is actually triggered on pushes.
-          @editHook = (id, config=null, events=null, addEvents=null, removeEvents=null, active=null) ->
-            data = {}
-            data.config = config if config != null
-            data.events = events if events != null
-            data.add_events = addEvents if addEvents != null
-            data.remove_events = removeEvents if removeEvents != null
-            data.active = active if active != null
+        # Edit a hook
+        # -------
+        #
+        # - `config` (Optional hash) : A Hash containing key/value pairs to provide settings for this hook.
+        #                      Modifying this will replace the entire config object.
+        #                      These settings vary between the services and are defined in the github-services repo.
+        # - `events` (Optional array) : Determines what events the hook is triggered for.
+        #                     This replaces the entire array of events. Default: ["push"].
+        # - `addEvents` (Optional array) : Determines a list of events to be added to the list of events that the Hook triggers for.
+        # - `removeEvents` (Optional array) : Determines a list of events to be removed from the list of events that the Hook triggers for.
+        # - `active` (Optional boolean) : Determines whether the hook is actually triggered on pushes.
+        editHook: (id, config=null, events=null, addEvents=null, removeEvents=null, active=null) ->
+          data = {}
+          data.config = config if config != null
+          data.events = events if events != null
+          data.add_events = addEvents if addEvents != null
+          data.remove_events = removeEvents if removeEvents != null
+          data.active = active if active != null
 
-            _request 'PATCH', "#{@repoPath}/hooks/#{id}", data
+          _request 'PATCH', "#{@repoPath}/hooks/#{id}", data
 
-          # Test a `push` hook
-          # -------
-          # This will trigger the hook with the latest push to the current
-          # repository if the hook is subscribed to push events.
-          # If the hook is not subscribed to push events, the server will
-          # respond with 204 but no test POST will be generated.
-          @testHook = (id) ->
-            _request 'POST', "#{@repoPath}/hooks/#{id}/tests", null
+        # Test a `push` hook
+        # -------
+        # This will trigger the hook with the latest push to the current
+        # repository if the hook is subscribed to push events.
+        # If the hook is not subscribed to push events, the server will
+        # respond with 204 but no test POST will be generated.
+        testHook: (id) ->
+          _request 'POST', "#{@repoPath}/hooks/#{id}/tests", null
 
-          # Delete a hook
-          # -------
-          @deleteHook = (id) ->
-            _request 'DELETE', "#{@repoPath}/hooks/#{id}", null
+        # Delete a hook
+        # -------
+        deleteHook: (id) ->
+          _request 'DELETE', "#{@repoPath}/hooks/#{id}", null
 
-          # List all Languages
-          # -------
-          @getLanguages = ->
-            _request 'GET', "#{@repoPath}/languages", null
+        # List all Languages
+        # -------
+        getLanguages: ->
+          _request 'GET', "#{@repoPath}/languages", null
 
-          # List all releases
-          # -------
-          @getReleases = () ->
-            _request 'GET', "#{@repoPath}/releases", null
+        # List all releases
+        # -------
+        getReleases: () ->
+          _request 'GET', "#{@repoPath}/releases", null
 
 
       # Gist API
