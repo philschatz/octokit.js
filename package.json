@@ -5,8 +5,8 @@
   "main": "octokit.js",
   "scripts": {
     "prepublish": "bower install",
-    "test": "grunt test --verbose",
-    "dist": "grunt dist --verbose",
+    "test": "VCR_MODE=playback grunt --verbose test",
+    "dist": "grunt --verbose dist",
     "update": "bower update",
     "blanket": {
       "pattern": [
@@ -16,7 +16,8 @@
   },
   "dependencies": {
     "es6-promise": "~0.1.1",
-    "xmlhttprequest": "~1.6.0"
+    "xmlhttprequest": "~1.6.0",
+    "sepia": "~1.0.3"
   },
   "devDependencies": {
     "grunt": "~0.4.2",

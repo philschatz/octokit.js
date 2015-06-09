@@ -1,0 +1,43 @@
+{
+  "statusCode": 200,
+  "headers": {
+    "server": "GitHub.com",
+    "date": "Tue, 22 Apr 2014 00:46:48 GMT",
+    "content-type": "application/json; charset=utf-8",
+    "connection": "close",
+    "status": "200 OK",
+    "x-ratelimit-limit": "5000",
+    "x-ratelimit-remaining": "4966",
+    "x-ratelimit-reset": "1398131192",
+    "cache-control": "private, max-age=60, s-maxage=60",
+    "last-modified": "Tue, 22 Apr 2014 00:46:46 GMT",
+    "etag": "\"2af364ad7f914994d11b4ba52f97bd3f\"",
+    "x-oauth-scopes": "gist, repo, user",
+    "x-accepted-oauth-scopes": "",
+    "vary": "Accept, Authorization, Cookie, X-GitHub-OTP",
+    "x-github-media-type": "github.v3; param=raw",
+    "x-xss-protection": "1; mode=block",
+    "x-frame-options": "deny",
+    "content-security-policy": "default-src 'none'",
+    "content-length": "1029",
+    "access-control-allow-credentials": "true",
+    "access-control-expose-headers": "ETag, Link, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval",
+    "access-control-allow-origin": "*",
+    "x-github-request-id": "17757AFA:3B01:8BB6B2:5355BBF8",
+    "strict-transport-security": "max-age=31536000",
+    "x-content-type-options": "nosniff",
+    "x-served-by": "c436b2b44345c72ff906059f604991e7"
+  },
+  "url": "https://api.github.com:443/repos/octokit-test/octokit-test-repo/git/trees/master?recursive=true&recursive=true",
+  "time": 369,
+  "request": {
+    "method": "GET",
+    "headers": {
+      "User-Agent": "octokit",
+      "Accept": "application/vnd.github.raw",
+      "If-Modified-Since": "Thu, 01 Jan 1970 00:00:00 GMT",
+      "Authorization": "token dca7f85a5911df8e9b7aeb4c5be8f5f50806ac49",
+      "Host": "api.github.com"
+    }
+  }
+}

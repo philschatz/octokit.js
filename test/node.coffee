@@ -1,3 +1,4 @@
+require('sepia')
 chai      = require('chai')
 Octokit   = require('../octokit').new
 makeTests = require('./common').makeTests
