@@ -1244,6 +1244,12 @@
             this.getReleases = function() {
               return _request('GET', "" + this.repoPath + "/releases", null);
             };
+            this.getContributors = function(anon) {
+              var data = {
+                anon: anon
+              };
+              return _request('GET', "" + this.repoPath + "/contributors", data);
+            };
           }
 
           return Repository;
